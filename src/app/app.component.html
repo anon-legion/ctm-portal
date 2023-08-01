@@ -1,36 +1,39 @@
-<header>
-  <h1>CTM Builder</h1>
+<header class="hero">
+  <div class="hero-body">
+    <h1 clas="title">{{ title }}</h1>
+  </div>
 </header>
-<main>
-  <h2>Main Content</h2>
-  <mat-form-field class="city-form-field">
-    <mat-label>City Name</mat-label>
-    <input matInput type="text" [(ngModel)]="value" />
-    <button
-      *ngIf="value"
-      matSuffix
-      mat-icon-button
-      aria-label="Clear"
-      (click)="value = ''">
-      <mat-icon>close</mat-icon>
-    </button>
-  </mat-form-field>
+<main class="section is-flex">
+  <div class="container is-flex is-flex-direction-column p-1 max-width-768">
+    <mat-form-field class="city-form-field" appearance="outline" color="accent">
+      <mat-label>City Name</mat-label>
+      <input matInput type="text" [(ngModel)]="cityName" />
+      <button
+        *ngIf="cityName"
+        matSuffix
+        mat-icon-button
+        aria-label="Clear"
+        (click)="cityName = ''">
+        <mat-icon>close</mat-icon>
+      </button>
+    </mat-form-field>
 
-  <mat-form-field class="city-form-field">
-    <mat-label>City ID</mat-label>
-    <input matInput type="text" [(ngModel)]="value" />
-    <button
-      *ngIf="value"
-      matSuffix
-      mat-icon-button
-      aria-label="Clear"
-      (click)="value = ''">
-      <mat-icon>close</mat-icon>
-    </button>
-  </mat-form-field>
+    <mat-form-field class="city-form-field" appearance="outline" color="accent">
+      <mat-label>City ID</mat-label>
+      <input matInput type="text" [(ngModel)]="cityId" />
+      <button
+        *ngIf="cityId"
+        matSuffix
+        mat-icon-button
+        aria-label="Clear"
+        (click)="cityId = ''">
+        <mat-icon>close</mat-icon>
+      </button>
+    </mat-form-field>
+    <mat-slide-toggle [(ngModel)]="isCityActive" color="primary">{{
+      isCityActive ? 'Active' : 'Inactive'
+    }}</mat-slide-toggle>
+    <button mat-raised-button color="primary">Add</button>
+  </div>
   <router-outlet></router-outlet>
 </main>
-
-<footer>
-  <h5>Copyright 2023</h5>
-</footer>
