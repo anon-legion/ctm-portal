@@ -4,36 +4,45 @@
   </div>
 </header>
 <main class="section is-flex">
-  <div class="container is-flex is-flex-direction-column p-1 max-width-768">
+  <form
+    class="container is-flex is-flex-direction-column p-1 max-width-768"
+    [formGroup]="cityForm"
+    (submit)="cityFormOnSubmit()">
     <mat-form-field class="city-form-field" appearance="outline" color="accent">
       <mat-label>City Name</mat-label>
-      <input matInput type="text" [(ngModel)]="cityName" />
+      <input matInput type="text" formControlName="cityName" />
       <button
-        *ngIf="cityName"
+        *ngIf="cityForm.value.cityName"
         matSuffix
         mat-icon-button
         aria-label="Clear"
-        (click)="cityName = ''">
+        (click)="cityForm.get('cityName')?.setValue('')">
         <mat-icon>close</mat-icon>
       </button>
     </mat-form-field>
 
     <mat-form-field class="city-form-field" appearance="outline" color="accent">
       <mat-label>City ID</mat-label>
-      <input matInput type="text" [(ngModel)]="cityId" />
+      <input matInput type="text" formControlName="cityId" />
       <button
-        *ngIf="cityId"
+        *ngIf="cityForm.value.cityId"
         matSuffix
         mat-icon-button
         aria-label="Clear"
-        (click)="cityId = ''">
+        (click)="cityForm.get('cityId')?.setValue('')">
         <mat-icon>close</mat-icon>
       </button>
     </mat-form-field>
-    <mat-slide-toggle [(ngModel)]="isCityActive" color="primary">{{
-      isCityActive ? 'Active' : 'Inactive'
-    }}</mat-slide-toggle>
-    <button mat-raised-button color="primary">Add</button>
-  </div>
+    <mat-slide-toggle color="accent" formControlName="isActive">
+      {{ cityForm.value.isActive ? 'Active' : 'Disabled' }}
+    </mat-slide-toggle>
+    <button
+      type="submit"
+      mat-raised-button
+      color="primary"
+      [disabled]="!cityForm.valid">
+      Add
+    </button>
+  </form>
   <router-outlet></router-outlet>
 </main>

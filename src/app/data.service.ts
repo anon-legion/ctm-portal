@@ -6,9 +6,6 @@ import { City } from './types';
 })
 export class DataService {
   url = 'http://localhost:3000/api/v1';
-  constructor() {
-    // do nothing
-  }
 
   async getAllCities(): Promise<City[]> {
     const data = await fetch(`${this.url}/cities`);
