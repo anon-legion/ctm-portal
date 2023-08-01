@@ -1,8 +1,9 @@
 import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { RouterModule } from '@angular/router';
+import { ReactiveFormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
-import { ReactiveFormsModule } from '@angular/forms';
 import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
@@ -17,6 +18,7 @@ import { City } from '../types';
   standalone: true,
   imports: [
     CommonModule,
+    RouterModule,
     MatIconModule,
     MatButtonModule,
     ReactiveFormsModule,
@@ -73,10 +75,10 @@ import { City } from '../types';
         Add
       </button>
     </form>
-    <mat-divider></mat-divider>
-    <mat-list class="width-breakpoint-768">
+    <mat-divider class="container width-breakpoint-768"></mat-divider>
+    <mat-list class="container width-breakpoint-768">
       <mat-list-item *ngFor="let city of cityList">
-        <a href="{{ city.id }}">{{ city.name }}</a>
+        <a [routerLink]="[city.id]">{{ city.name }}</a>
       </mat-list-item>
     </mat-list>
   `,
