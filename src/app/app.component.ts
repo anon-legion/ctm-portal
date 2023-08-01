@@ -1,6 +1,7 @@
 import { Component, inject } from '@angular/core';
 import { DataService } from './data.service';
 import { FormControl, FormGroup, Validators } from '@angular/forms';
+import { City } from './types';
 
 @Component({
   selector: 'app-root',
@@ -8,8 +9,9 @@ import { FormControl, FormGroup, Validators } from '@angular/forms';
   styleUrls: ['./app.component.scss'],
 })
 export class AppComponent {
-  dataService: DataService = inject(DataService);
   title = 'CTM Builder';
+  dataService: DataService = inject(DataService);
+  cityList: City[] = [];
   cityForm = new FormGroup({
     cityId: new FormControl('', [Validators.required, Validators.minLength(4)]),
     cityName: new FormControl('', [
@@ -22,7 +24,8 @@ export class AppComponent {
 
   constructor() {
     this.dataService.getAllCities().then(res => {
-      console.log(res);
+      this.cityList = res;
+      console.log(this.cityList);
     });
   }
 

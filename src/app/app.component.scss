@@ -1,3 +1,11 @@
-.max-width-768 {
-  max-width: 768px !important;
+.width-breakpoint-768 {
+  @media (max-width: 767px) {
+    max-width: 768px !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+
+  @media (min-width: 768px) {
+    min-width: 728px !important;
+  }
 }
