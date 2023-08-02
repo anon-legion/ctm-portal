@@ -54,6 +54,9 @@ type CityKeys = 'id' | 'name' | 'isActive';
           type="text"
           formControlName="name"
           class="is-capitalized" />
+        <mat-error *ngIf="cityForm.get('name')?.invalid">
+          Duplicate value
+        </mat-error>
         <button
           *ngIf="cityForm.value.name"
           matSuffix
@@ -69,6 +72,9 @@ type CityKeys = 'id' | 'name' | 'isActive';
         color="accent">
         <mat-label>City ID</mat-label>
         <input matInput type="text" formControlName="id" class="is-lowercase" />
+        <mat-error *ngIf="cityForm.get('id')?.invalid">
+          Duplicate value
+        </mat-error>
         <button
           *ngIf="cityForm.value.id"
           matSuffix
@@ -78,7 +84,7 @@ type CityKeys = 'id' | 'name' | 'isActive';
           <mat-icon>close</mat-icon>
         </button>
       </mat-form-field>
-      <mat-slide-toggle class="mb-3" color="accent" formControlName="isActive">
+      <mat-slide-toggle class="mb-2" color="accent" formControlName="isActive">
         {{ cityForm.value.isActive ? 'Active' : 'Inactive' }}
       </mat-slide-toggle>
       <button
@@ -109,7 +115,7 @@ export class CityComponent {
     id: new FormControl('', [
       Validators.required,
       Validators.minLength(3),
-      Validators.maxLength(4),
+      Validators.maxLength(5),
     ]),
     name: new FormControl('', [Validators.required, Validators.minLength(4)]),
     isActive: new FormControl(true, [Validators.required]),
@@ -136,7 +142,7 @@ export class CityComponent {
         for (const key in data) {
           const control = this.cityForm.get(key);
           if (!data[key as keyof typeof data] || !control) continue;
-          control.setErrors({ error: 'duplicate detected' });
+          control.setErrors({ error: 'duplicate' });
         }
         return;
       }

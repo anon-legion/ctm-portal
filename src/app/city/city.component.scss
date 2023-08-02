@@ -1,3 +1,7 @@
+form {
+  gap: 0.5rem;
+}
+
 .width-breakpoint-768 {
   width: clamp(256px, 100%, 768px);
 
