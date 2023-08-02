@@ -13,6 +13,15 @@ import { FormControl, FormGroup, Validators } from '@angular/forms';
 import { DataService } from '../data.service';
 import { City } from '../types';
 
+function sortCityArr(cities: City[]): City[] {
+  const ascending = cities.sort((a, b) => a.name.localeCompare(b.name));
+  return ascending;
+}
+
+function toTitleCase(text: string) {
+  return text.toLowerCase().replace(/\b./g, a => a.toUpperCase());
+}
+
 @Component({
   selector: 'app-city',
   standalone: true,
@@ -31,56 +40,61 @@ import { City } from '../types';
   template: `
     <form
       class="container is-flex is-flex-direction-column p-1 mb-2 width-breakpoint-768"
-      [formGroup]="cityForm"
-      (submit)="cityFormOnSubmit()">
+      [formGroup]="cityForm">
       <mat-form-field
         class="city-form-field"
         appearance="outline"
         color="accent">
         <mat-label>City Name</mat-label>
-        <input matInput type="text" formControlName="cityName" />
+        <input
+          matInput
+          type="text"
+          formControlName="name"
+          class="is-capitalized" />
         <button
-          *ngIf="cityForm.value.cityName"
+          *ngIf="cityForm.value.name"
           matSuffix
           mat-icon-button
           aria-label="Clear"
-          (click)="cityForm.get('cityName')?.setValue('')">
+          (click)="cityForm.get('name')?.setValue('')">
           <mat-icon>close</mat-icon>
         </button>
       </mat-form-field>
-
       <mat-form-field
         class="city-form-field"
         appearance="outline"
         color="accent">
         <mat-label>City ID</mat-label>
-        <input matInput type="text" formControlName="cityId" />
+        <input matInput type="text" formControlName="id" class="is-lowercase" />
         <button
-          *ngIf="cityForm.value.cityId"
+          *ngIf="cityForm.value.id"
           matSuffix
           mat-icon-button
           aria-label="Clear"
-          (click)="cityForm.get('cityId')?.setValue('')">
+          (click)="cityForm.get('id')?.setValue('')">
           <mat-icon>close</mat-icon>
         </button>
       </mat-form-field>
       <mat-slide-toggle class="mb-3" color="accent" formControlName="isActive">
-        {{ cityForm.value.isActive ? 'Active' : 'Disabled' }}
+        {{ cityForm.value.isActive ? 'Active' : 'Inactive' }}
       </mat-slide-toggle>
       <button
-        type="submit"
+        type="button"
         mat-raised-button
         color="primary"
-        [disabled]="!cityForm.valid">
+        [disabled]="!cityForm.valid"
+        (click)="cityFormOnSubmit()">
         Add
       </button>
     </form>
     <mat-divider class="container width-breakpoint-768"></mat-divider>
-    <mat-list class="container width-breakpoint-768">
-      <mat-list-item *ngFor="let city of cityList">
-        <a [routerLink]="[city.id]">{{ city.name }}</a>
-      </mat-list-item>
-    </mat-list>
+    <div class="list-container width-breakpoint-768">
+      <mat-list class="">
+        <mat-list-item *ngFor="let city of cityList">
+          <a [routerLink]="[city.id]">{{ city.name }}</a>
+        </mat-list-item>
+      </mat-list>
+    </div>
   `,
   styleUrls: ['./city.component.scss'],
 })
@@ -89,25 +103,37 @@ export class CityComponent {
   dataService: DataService = inject(DataService);
   cityList: City[] = [];
   cityForm = new FormGroup({
-    cityId: new FormControl('', [Validators.required, Validators.minLength(4)]),
-    cityName: new FormControl('', [
+    id: new FormControl('', [
       Validators.required,
       Validators.minLength(3),
-      Validators.maxLength(5),
+      Validators.maxLength(4),
     ]),
+    name: new FormControl('', [Validators.required]),
     isActive: new FormControl(true, [Validators.required]),
   });
 
   constructor() {
     this.dataService.getAllCities().then(res => {
-      this.cityList = res;
+      this.cityList = sortCityArr(res);
     });
   }
 
   cityFormOnSubmit() {
-    console.log(this.cityForm.value.cityId || 'n/a');
-    console.log(this.cityForm.value.cityName || 'n/a');
-    console.log(this.cityForm.value.isActive);
-    console.log(this.cityForm.valid);
+    if (!this.cityForm.value.id || !this.cityForm.value.name) return;
+
+    const data = {
+      id: this.cityForm.value.id.toLowerCase(),
+      name: toTitleCase(this.cityForm.value.name),
+      isActive: this.cityForm.value.isActive,
+    } as City;
+
+    this.dataService.addNewCity(data).then(res => {
+      const isSuccess = JSON.stringify(res) === JSON.stringify(data);
+      if (isSuccess) {
+        this.cityList.push(res);
+        this.cityList = sortCityArr(this.cityList);
+        this.cityForm.reset({ isActive: true });
+      }
+    });
   }
 }

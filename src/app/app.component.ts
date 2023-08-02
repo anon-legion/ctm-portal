@@ -1,7 +1,4 @@
-import { Component, inject } from '@angular/core';
-import { DataService } from './data.service';
-import { FormControl, FormGroup, Validators } from '@angular/forms';
-import { City } from './types';
+import { Component } from '@angular/core';
 
 @Component({
   selector: 'app-root',

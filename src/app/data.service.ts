@@ -11,4 +11,15 @@ export class DataService {
     const data = await fetch(`${this.url}/cities`);
     return data.json() ?? [];
   }
+
+  async addNewCity(data: City) {
+    console.dir(data);
+    const options = {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    };
+    const res = await fetch(`${this.url}/cities`, options);
+    return res.json() ?? null;
+  }
 }
