@@ -146,7 +146,7 @@ export class CityComponent {
         }
         return;
       }
-      if (status === StatusCode.Ok) {
+      if (status === StatusCode.Created) {
         this.cityList.push(data);
         this.cityList = sortCityArr(this.cityList);
         this.cityForm.reset({ isActive: true });
