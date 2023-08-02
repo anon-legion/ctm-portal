@@ -10,6 +10,7 @@ import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatListModule } from '@angular/material/list';
 import { MatDividerModule } from '@angular/material/divider';
 import { FormControl, FormGroup, Validators } from '@angular/forms';
+import { HttpStatusCode as StatusCode } from '@angular/common/http';
 import { DataService } from '../data.service';
 import { City } from '../types';
 
@@ -21,6 +22,8 @@ function sortCityArr(cities: City[]): City[] {
 function toTitleCase(text: string) {
   return text.toLowerCase().replace(/\b./g, a => a.toUpperCase());
 }
+
+type CityKeys = 'id' | 'name' | 'isActive';
 
 @Component({
   selector: 'app-city',
@@ -56,7 +59,7 @@ function toTitleCase(text: string) {
           matSuffix
           mat-icon-button
           aria-label="Clear"
-          (click)="cityForm.get('name')?.setValue('')">
+          (click)="cityForm.get('name')?.reset('')">
           <mat-icon>close</mat-icon>
         </button>
       </mat-form-field>
@@ -71,7 +74,7 @@ function toTitleCase(text: string) {
           matSuffix
           mat-icon-button
           aria-label="Clear"
-          (click)="cityForm.get('id')?.setValue('')">
+          (click)="cityForm.get('id')?.reset()">
           <mat-icon>close</mat-icon>
         </button>
       </mat-form-field>
@@ -108,7 +111,7 @@ export class CityComponent {
       Validators.minLength(3),
       Validators.maxLength(4),
     ]),
-    name: new FormControl('', [Validators.required]),
+    name: new FormControl('', [Validators.required, Validators.minLength(4)]),
     isActive: new FormControl(true, [Validators.required]),
   });
 
@@ -121,16 +124,24 @@ export class CityComponent {
   cityFormOnSubmit() {
     if (!this.cityForm.value.id || !this.cityForm.value.name) return;
 
-    const data = {
+    const formData = {
       id: this.cityForm.value.id.toLowerCase(),
       name: toTitleCase(this.cityForm.value.name),
       isActive: this.cityForm.value.isActive,
     } as City;
 
-    this.dataService.addNewCity(data).then(res => {
-      const isSuccess = JSON.stringify(res) === JSON.stringify(data);
-      if (isSuccess) {
-        this.cityList.push(res);
+    this.dataService.addNewCity(formData).then(res => {
+      const { status, data } = res;
+      if (status === StatusCode.Conflict) {
+        for (const key in data) {
+          const control = this.cityForm.get(key);
+          if (!data[key as keyof typeof data] || !control) continue;
+          control.setErrors({ error: 'duplicate detected' });
+        }
+        return;
+      }
+      if (status === StatusCode.Ok) {
+        this.cityList.push(data);
         this.cityList = sortCityArr(this.cityList);
         this.cityForm.reset({ isActive: true });
       }
