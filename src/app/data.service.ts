@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { City } from './types';
+import { City, Route } from './types';
 
 @Injectable({
   providedIn: 'root',
@@ -9,7 +9,7 @@ export class DataService {
 
   async getAllCities(): Promise<City[]> {
     const data = await fetch(`${this.url}/cities`);
-    return data.json() ?? [];
+    return (await data.json()) ?? [];
   }
 
   async addNewCity(data: City): Promise<{ status: number; data: City }> {
@@ -21,5 +21,15 @@ export class DataService {
     const res = await fetch(`${this.url}/cities`, options);
     const json = (await res.json()) ?? null;
     return { status: res.status, data: json };
+  }
+
+  async getCityById(id: string): Promise<City> {
+    const data = await fetch(`${this.url}/cities/${id}`);
+    return (await data.json()) ?? {};
+  }
+
+  async getRouteByCityId(id: string): Promise<Route[]> {
+    const data = await fetch(`${this.url}/cities/${id}/bus-routes`);
+    return (await data.json()) ?? [];
   }
 }

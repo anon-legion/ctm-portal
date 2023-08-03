@@ -1,7 +1,13 @@
 import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
-import { ReactiveFormsModule } from '@angular/forms';
+import {
+  ReactiveFormsModule,
+  FormControl,
+  FormGroup,
+  Validators,
+} from '@angular/forms';
+import { HttpStatusCode as StatusCode } from '@angular/common/http';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatInputModule } from '@angular/material/input';
@@ -9,8 +15,6 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatListModule } from '@angular/material/list';
 import { MatDividerModule } from '@angular/material/divider';
-import { FormControl, FormGroup, Validators } from '@angular/forms';
-import { HttpStatusCode as StatusCode } from '@angular/common/http';
 import { DataService } from '../data.service';
 import { City } from '../types';
 
@@ -22,8 +26,6 @@ function sortCityArr(cities: City[]): City[] {
 function toTitleCase(text: string) {
   return text.toLowerCase().replace(/\b./g, a => a.toUpperCase());
 }
-
-type CityKeys = 'id' | 'name' | 'isActive';
 
 @Component({
   selector: 'app-city',
@@ -44,10 +46,7 @@ type CityKeys = 'id' | 'name' | 'isActive';
     <form
       class="container is-flex is-flex-direction-column p-1 mb-2 width-breakpoint-768"
       [formGroup]="cityForm">
-      <mat-form-field
-        class="city-form-field"
-        appearance="outline"
-        color="accent">
+      <mat-form-field appearance="outline" color="accent">
         <mat-label>City Name</mat-label>
         <input
           matInput
@@ -55,7 +54,7 @@ type CityKeys = 'id' | 'name' | 'isActive';
           formControlName="name"
           class="is-capitalized" />
         <mat-error *ngIf="cityForm.get('name')?.invalid">
-          Duplicate value
+          Name already exists
         </mat-error>
         <button
           *ngIf="cityForm.value.name"
@@ -66,14 +65,11 @@ type CityKeys = 'id' | 'name' | 'isActive';
           <mat-icon>close</mat-icon>
         </button>
       </mat-form-field>
-      <mat-form-field
-        class="city-form-field"
-        appearance="outline"
-        color="accent">
+      <mat-form-field appearance="outline" color="accent">
         <mat-label>City ID</mat-label>
         <input matInput type="text" formControlName="id" class="is-lowercase" />
         <mat-error *ngIf="cityForm.get('id')?.invalid">
-          Duplicate value
+          ID already exists
         </mat-error>
         <button
           *ngIf="cityForm.value.id"
@@ -96,13 +92,30 @@ type CityKeys = 'id' | 'name' | 'isActive';
         Add
       </button>
     </form>
-    <mat-divider class="container width-breakpoint-768"></mat-divider>
-    <div class="list-container width-breakpoint-768">
-      <mat-list class="">
+    <mat-divider class="width-breakpoint-768"></mat-divider>
+    <div class="list-container mt-2 width-breakpoint-768">
+      <!-- <mat-list class="">
         <mat-list-item *ngFor="let city of cityList">
           <a [routerLink]="[city.id]">{{ city.name }}</a>
         </mat-list-item>
-      </mat-list>
+      </mat-list> -->
+      <mat-selection-list #cities [multiple]="false">
+        <mat-list-option *ngFor="let city of cityList" [value]="city.id">
+          {{ city.name }}
+        </mat-list-option>
+      </mat-selection-list>
+    </div>
+    <div
+      class="is-flex is-justify-content-space-around mt-4 width-breakpoint-768">
+      <button mat-raised-button color="accent" class="uniform-button">
+        Edit
+      </button>
+      <button mat-raised-button color="warn" class="uniform-button">
+        Delete
+      </button>
+      <button mat-raised-button color="primary" class="uniform-button">
+        Add Routes
+      </button>
     </div>
   `,
   styleUrls: ['./city.component.scss'],

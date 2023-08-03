@@ -2,23 +2,6 @@ form {
   gap: 0.5rem;
 }
 
-.width-breakpoint-768 {
-  width: clamp(256px, 100%, 768px);
-
-  @media (max-width: 767px) {
-    margin-left: 0 !important;
-    margin-right: 0 !important;
-  }
-
-  @media (min-width: 768px) {
-    margin-left: auto !important;
-    margin-right: auto !important;
-  }
-}
-
-.list-container {
-  max-height: 55vh;
-  max-height: 55svh;
-  overflow: auto;
-  margin-top: 0.5rem;
+.uniform-button {
+  width: 120px;
 }
