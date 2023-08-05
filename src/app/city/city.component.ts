@@ -13,10 +13,15 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
-import { MatListModule } from '@angular/material/list';
+import {
+  MatListModule,
+  MatListOption,
+  MatSelectionListChange,
+} from '@angular/material/list';
 import { MatDividerModule } from '@angular/material/divider';
 import { DataService } from '../data.service';
 import { City } from '../types';
+import { SelectionModel } from '@angular/cdk/collections';
 
 function sortCityArr(cities: City[]): City[] {
   const ascending = cities.sort((a, b) => a.name.localeCompare(b.name));
@@ -65,21 +70,6 @@ function toTitleCase(text: string) {
           <mat-icon>close</mat-icon>
         </button>
       </mat-form-field>
-      <mat-form-field appearance="outline" color="accent">
-        <mat-label>City ID</mat-label>
-        <input matInput type="text" formControlName="id" class="is-lowercase" />
-        <mat-error *ngIf="cityForm.get('id')?.invalid">
-          ID already exists
-        </mat-error>
-        <button
-          *ngIf="cityForm.value.id"
-          matSuffix
-          mat-icon-button
-          aria-label="Clear"
-          (click)="cityForm.get('id')?.reset()">
-          <mat-icon>close</mat-icon>
-        </button>
-      </mat-form-field>
       <mat-slide-toggle class="mb-2" color="accent" formControlName="isActive">
         {{ cityForm.value.isActive ? 'Active' : 'Inactive' }}
       </mat-slide-toggle>
@@ -94,13 +84,11 @@ function toTitleCase(text: string) {
     </form>
     <mat-divider class="width-breakpoint-768"></mat-divider>
     <div class="list-container mt-2 width-breakpoint-768">
-      <!-- <mat-list class="">
-        <mat-list-item *ngFor="let city of cityList">
-          <a [routerLink]="[city.id]">{{ city.name }}</a>
-        </mat-list-item>
-      </mat-list> -->
-      <mat-selection-list #cities [multiple]="false">
-        <mat-list-option *ngFor="let city of cityList" [value]="city.id">
+      <mat-selection-list
+        #cities
+        [multiple]="false"
+        (selectionChange)="selectionOnChange(cities.selectedOptions.selected)">
+        <mat-list-option *ngFor="let city of cityList" [value]="city._id">
           {{ city.name }}
         </mat-list-option>
       </mat-selection-list>
@@ -113,7 +101,7 @@ function toTitleCase(text: string) {
       <button mat-raised-button color="warn" class="uniform-button">
         Delete
       </button>
-      <button mat-raised-button color="primary" class="uniform-button">
+      <button mat-raised-button color="accent" class="uniform-button">
         Add Routes
       </button>
     </div>
@@ -125,26 +113,25 @@ export class CityComponent {
   dataService: DataService = inject(DataService);
   cityList: City[] = [];
   cityForm = new FormGroup({
-    id: new FormControl('', [
-      Validators.required,
-      Validators.minLength(3),
-      Validators.maxLength(5),
-    ]),
     name: new FormControl('', [Validators.required, Validators.minLength(4)]),
     isActive: new FormControl(true, [Validators.required]),
   });
+  isEditMode = false;
 
   constructor() {
     this.dataService.getAllCities().then(res => {
+      console.log(res);
       this.cityList = sortCityArr(res);
     });
   }
 
+  // TODO: Add edit mode, and Delete city
+
   cityFormOnSubmit() {
-    if (!this.cityForm.value.id || !this.cityForm.value.name) return;
+    if (!this.cityForm.value.name) return;
+    // TODO: add spinner and handle errors
 
     const formData = {
-      id: this.cityForm.value.id.toLowerCase(),
       name: toTitleCase(this.cityForm.value.name),
       isActive: this.cityForm.value.isActive,
     } as City;
@@ -165,5 +152,10 @@ export class CityComponent {
         this.cityForm.reset({ isActive: true });
       }
     });
+  }
+
+  selectionOnChange(selectedOptions: MatListOption[]) {
+    const [selectedOption] = selectedOptions;
+    console.log(selectedOption.value);
   }
 }

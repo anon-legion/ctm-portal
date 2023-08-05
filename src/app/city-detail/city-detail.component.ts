@@ -114,7 +114,7 @@ export class CityDetailComponent {
     const cityId = this.route.snapshot.params['id'];
     this.dataService.getCityById(cityId).then((city: City) => {
       this.cityForm.setValue({
-        id: city.id,
+        id: city._id,
         name: city.name,
         isActive: city.isActive ?? true,
       });

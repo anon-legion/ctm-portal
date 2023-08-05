@@ -1,5 +1,5 @@
 export interface City {
-  id: string;
+  _id: string;
   name: string;
   isActive?: boolean;
 }
