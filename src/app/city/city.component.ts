@@ -1,6 +1,6 @@
 import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { RouterModule, Router } from '@angular/router';
 import {
   ReactiveFormsModule,
   FormControl,
@@ -13,15 +13,11 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
-import {
-  MatListModule,
-  MatListOption,
-  MatSelectionListChange,
-} from '@angular/material/list';
+import { MatListModule, MatListOption } from '@angular/material/list';
 import { MatDividerModule } from '@angular/material/divider';
+import { MatTable, MatTableModule } from '@angular/material/table';
 import { DataService } from '../data.service';
 import { City } from '../types';
-import { SelectionModel } from '@angular/cdk/collections';
 
 function sortCityArr(cities: City[]): City[] {
   const ascending = cities.sort((a, b) => a.name.localeCompare(b.name));
@@ -46,6 +42,7 @@ function toTitleCase(text: string) {
     MatSlideToggleModule,
     MatListModule,
     MatDividerModule,
+    MatTableModule,
   ],
   template: `
     <form
@@ -79,7 +76,7 @@ function toTitleCase(text: string) {
         color="primary"
         [disabled]="!cityForm.valid"
         (click)="cityFormOnSubmit()">
-        Add
+        {{ isEditMode ? 'Update' : 'Add' }}
       </button>
     </form>
     <mat-divider class="width-breakpoint-768"></mat-divider>
@@ -88,20 +85,52 @@ function toTitleCase(text: string) {
         #cities
         [multiple]="false"
         (selectionChange)="selectionOnChange(cities.selectedOptions.selected)">
-        <mat-list-option *ngFor="let city of cityList" [value]="city._id">
+        <mat-list-option
+          *ngFor="let city of cityList"
+          [value]="city._id"
+          [selected]="">
           {{ city.name }}
         </mat-list-option>
       </mat-selection-list>
+      <!-- <table mat-table [dataSource]="cityList">
+        <ng-container matColumnDef="city">
+          <th mat-header-cell *matHeaderCellDef>City</th>
+          <td mat-cell *matCellDef="let element">{{ element.name }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="is active">
+          <th mat-header-cell *matHeaderCellDef>Is Active</th>
+          <td mat-cell *matCellDef="let element">{{ element.isActive }}</td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr
+          mat-row
+          (click)="rowOnClick(row)"
+          *matRowDef="let row; columns: displayedColumns"></tr>
+      </table> -->
     </div>
     <div
       class="is-flex is-justify-content-space-around mt-4 width-breakpoint-768">
-      <button mat-raised-button color="accent" class="uniform-button">
+      <button
+        mat-raised-button
+        color="accent"
+        class="uniform-button"
+        (click)="editOnClick(selectedCity)">
         Edit
       </button>
-      <button mat-raised-button color="warn" class="uniform-button">
+      <button
+        mat-raised-button
+        color="warn"
+        class="uniform-button"
+        (click)="deleteOnClick(selectedCity)">
         Delete
       </button>
-      <button mat-raised-button color="accent" class="uniform-button">
+      <button
+        mat-raised-button
+        color="accent"
+        class="uniform-button"
+        (click)="navigateTo(selectedCity)">
         Add Routes
       </button>
     </div>
@@ -117,15 +146,18 @@ export class CityComponent {
     isActive: new FormControl(true, [Validators.required]),
   });
   isEditMode = false;
+  selectedCity = '';
+  displayedColumns: string[] = ['city', 'is active'];
 
-  constructor() {
+  constructor(private router: Router) {
     this.dataService.getAllCities().then(res => {
-      console.log(res);
-      this.cityList = sortCityArr(res);
+      if (res.ok) {
+        this.cityList = sortCityArr(res.data);
+      }
     });
   }
 
-  // TODO: Add edit mode, and Delete city
+  // TODO: Add edit mode
 
   cityFormOnSubmit() {
     if (!this.cityForm.value.name) return;
@@ -136,14 +168,30 @@ export class CityComponent {
       isActive: this.cityForm.value.isActive,
     } as City;
 
+    if (this.isEditMode) {
+      formData._id = this.selectedCity;
+      this.dataService.updateCityById(this.selectedCity, formData).then(res => {
+        const { status, data } = res;
+        if (status === StatusCode.NotFound) return;
+        if (status === StatusCode.Ok) {
+          const index = this.cityList.findIndex(
+            city => city._id === this.selectedCity
+          );
+          this.cityList[index] = data;
+          this.cityList = sortCityArr(this.cityList);
+          this.cityForm.reset({ isActive: true });
+          this.isEditMode = false;
+        }
+      });
+      return;
+    }
+
     this.dataService.addNewCity(formData).then(res => {
       const { status, data } = res;
       if (status === StatusCode.Conflict) {
-        for (const key in data) {
-          const control = this.cityForm.get(key);
-          if (!data[key as keyof typeof data] || !control) continue;
-          control.setErrors({ error: 'duplicate' });
-        }
+        const control = this.cityForm.get('name');
+        if (!control) return;
+        control.setErrors({ error: 'duplicate' });
         return;
       }
       if (status === StatusCode.Created) {
@@ -156,6 +204,40 @@ export class CityComponent {
 
   selectionOnChange(selectedOptions: MatListOption[]) {
     const [selectedOption] = selectedOptions;
-    console.log(selectedOption.value);
+    this.selectedCity = selectedOption.value;
   }
+
+  deleteOnClick(cityId: string) {
+    this.dataService.deleteCityById(cityId).then(res => {
+      console.log(res);
+      const { status } = res;
+      if (status === StatusCode.Ok) {
+        this.cityList = this.cityList.filter(city => city._id !== cityId);
+        this.selectedCity = '';
+      }
+    });
+  }
+
+  editOnClick(cityId: string) {
+    const cityData = this.cityList.find(city => city._id === cityId);
+    if (!cityData) return;
+    this.isEditMode = true;
+    this.cityForm.setValue({
+      name: cityData.name,
+      isActive: cityData.isActive ?? true,
+    });
+  }
+
+  navigateTo(route: string) {
+    const currentUrl = this.router.url;
+    const newUrl = `${currentUrl}/${route}`;
+    this.router.navigateByUrl(newUrl);
+  }
+
+  // rowOnClick(row: City) {
+  //   this.cityForm.setValue({
+  //     name: row.name,
+  //     isActive: row.isActive ?? true,
+  //   });
+  // }
 }

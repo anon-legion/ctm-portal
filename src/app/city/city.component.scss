@@ -2,6 +2,19 @@ form {
   gap: 0.5rem;
 }
 
+td,
+th {
+  vertical-align: middle;
+}
+
 .uniform-button {
   width: 120px;
+}
+
+.mat-mdc-row .mat-mdc-cell {
+  cursor: pointer;
+}
+
+.mat-mdc-row:hover .mat-mdc-cell {
+  background-color: hsl(0, 0%, 36%);
 }

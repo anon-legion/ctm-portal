@@ -42,57 +42,19 @@ import { City, Route } from '../types';
           matInput
           type="text"
           formControlName="name"
-          class="is-capitalized" />
-        <mat-error *ngIf="cityForm.get('name')?.invalid">
-          Name already exists
-        </mat-error>
-        <button
-          *ngIf="cityForm.value.name"
-          matSuffix
-          mat-icon-button
-          aria-label="Clear"
-          (click)="cityForm.get('name')?.reset('')">
-          <mat-icon>close</mat-icon>
-        </button>
+          class="is-capitalized"
+          [disabled]="true" />
       </mat-form-field>
-      <mat-form-field appearance="outline" color="accent">
-        <mat-label>City ID</mat-label>
-        <input matInput type="text" formControlName="id" class="is-lowercase" />
-        <mat-error *ngIf="cityForm.get('id')?.invalid">
-          ID already exists
-        </mat-error>
-        <button
-          *ngIf="cityForm.value.id"
-          matSuffix
-          mat-icon-button
-          aria-label="Clear"
-          (click)="cityForm.get('id')?.reset()">
-          <mat-icon>close</mat-icon>
-        </button>
-      </mat-form-field>
-      <mat-slide-toggle class="mb-2" color="accent" formControlName="isActive">
-        {{ cityForm.value.isActive ? 'Active' : 'Inactive' }}
-      </mat-slide-toggle>
       <button
         type="button"
         mat-raised-button
         color="primary"
         [disabled]="!cityForm.valid"
         (click)="cityFormOnSubmit()">
-        Update
+        Add
       </button>
     </form>
     <mat-divider class="width-breakpoint-768"></mat-divider>
-    <div class="list-container mt-2 width-breakpoint-768">
-      <mat-selection-list #busRoutes [multiple]="false">
-        <mat-list-option *ngFor="let route of routeList" [value]="route.id">
-          {{ route.name }}
-        </mat-list-option>
-      </mat-selection-list>
-      <button mat-raised-button>Edit</button>
-      <button mat-raised-button>Delete</button>
-      <button mat-raised-button>Add Routes</button>
-    </div>
   `,
   styleUrls: ['./city-detail.component.scss'],
 })
@@ -100,29 +62,24 @@ export class CityDetailComponent {
   route = inject(ActivatedRoute);
   dataService: DataService = inject(DataService);
   cityForm = new FormGroup({
-    id: new FormControl('', [
-      Validators.required,
-      Validators.minLength(3),
-      Validators.maxLength(5),
-    ]),
     name: new FormControl('', [Validators.required, Validators.minLength(4)]),
-    isActive: new FormControl(true, [Validators.required]),
   });
   routeList: Route[] = [];
 
   constructor() {
     const cityId = this.route.snapshot.params['id'];
-    this.dataService.getCityById(cityId).then((city: City) => {
-      this.cityForm.setValue({
-        id: city._id,
-        name: city.name,
-        isActive: city.isActive ?? true,
-      });
+    this.dataService.getCityById(cityId).then(res => {
+      if (res.ok) {
+        const city = res.data as City;
+        this.cityForm.setValue({
+          name: city.name,
+        });
+      }
     });
 
-    this.dataService.getRouteByCityId(cityId).then((routes: Route[]) => {
-      this.routeList = routes;
-    });
+    // this.dataService.getRouteByCityId(cityId).then((routes: Route[]) => {
+    //   this.routeList = routes;
+    // });
   }
 
   cityFormOnSubmit() {
