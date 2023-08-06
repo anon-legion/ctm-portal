@@ -15,7 +15,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatListModule, MatListOption } from '@angular/material/list';
 import { MatDividerModule } from '@angular/material/divider';
-import { MatTable, MatTableModule } from '@angular/material/table';
+// import { MatTable, MatTableModule } from '@angular/material/table';
 import { DataService } from '../data.service';
 import { City } from '../types';
 
@@ -42,7 +42,7 @@ function toTitleCase(text: string) {
     MatSlideToggleModule,
     MatListModule,
     MatDividerModule,
-    MatTableModule,
+    // MatTableModule,
   ],
   template: `
     <form

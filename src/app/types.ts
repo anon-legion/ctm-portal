@@ -5,7 +5,7 @@ export interface City {
 }
 
 export interface Route {
-  id: string;
+  _id: string;
   cityId: string;
   name: string;
   isActive?: boolean;

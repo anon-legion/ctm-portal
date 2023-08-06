@@ -34,9 +34,12 @@ export class DataService {
     return { status: res.status, ok: res.ok, data: json };
   }
 
-  async getRouteByCityId(id: string): Promise<Route[]> {
-    const data = await fetch(`${this.url}/cities/${id}/bus-routes`);
-    return (await data.json()) ?? [];
+  async getRouteByCityId(
+    id: string
+  ): Promise<{ status: number; ok: boolean; data: Route[] }> {
+    const res = await fetch(`${this.url}/cities/${id}/bus-routes`);
+    const json = (await res.json()) ?? [];
+    return { status: res.status, ok: res.ok, data: json };
   }
 
   async deleteCityById(
