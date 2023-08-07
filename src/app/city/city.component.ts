@@ -18,15 +18,7 @@ import { MatDividerModule } from '@angular/material/divider';
 // import { MatTable, MatTableModule } from '@angular/material/table';
 import { DataService } from '../data.service';
 import { City } from '../types';
-
-function sortCityArr(cities: City[]): City[] {
-  const ascending = cities.sort((a, b) => a.name.localeCompare(b.name));
-  return ascending;
-}
-
-function toTitleCase(text: string) {
-  return text.toLowerCase().replace(/\b./g, a => a.toUpperCase());
-}
+import { sortObjArrByProp, toTitleCase } from '../shared/utils';
 
 @Component({
   selector: 'app-city',
@@ -46,7 +38,7 @@ function toTitleCase(text: string) {
   ],
   template: `
     <form
-      class="container is-flex is-flex-direction-column p-1 mb-2 width-breakpoint-768"
+      class="container is-flex is-flex-direction-column mb-2 width-breakpoint-768"
       [formGroup]="cityForm">
       <mat-form-field appearance="outline" color="accent">
         <mat-label>City Name</mat-label>
@@ -79,6 +71,8 @@ function toTitleCase(text: string) {
         {{ isEditMode ? 'Update' : 'Add' }}
       </button>
     </form>
+
+    <!-- TODO: add spinner  -->
     <mat-divider class="width-breakpoint-768"></mat-divider>
     <div class="list-container mt-2 width-breakpoint-768">
       <mat-selection-list
@@ -110,6 +104,7 @@ function toTitleCase(text: string) {
           *matRowDef="let row; columns: displayedColumns"></tr>
       </table> -->
     </div>
+
     <div
       class="is-flex is-justify-content-space-around mt-4 width-breakpoint-768">
       <button
@@ -152,16 +147,13 @@ export class CityComponent {
   constructor(private router: Router) {
     this.dataService.getAllCities().then(res => {
       if (res.ok) {
-        this.cityList = sortCityArr(res.data);
+        this.cityList = sortObjArrByProp<City>(res.data, 'name');
       }
     });
   }
 
-  // TODO: Add edit mode
-
   cityFormOnSubmit() {
     if (!this.cityForm.value.name) return;
-    // TODO: add spinner and handle errors
 
     const formData = {
       name: toTitleCase(this.cityForm.value.name),
@@ -178,7 +170,7 @@ export class CityComponent {
             city => city._id === this.selectedCity
           );
           this.cityList[index] = data;
-          this.cityList = sortCityArr(this.cityList);
+          this.cityList = sortObjArrByProp<City>(this.cityList, 'name');
           this.cityForm.reset({ isActive: true });
           this.isEditMode = false;
         }
@@ -196,7 +188,7 @@ export class CityComponent {
       }
       if (status === StatusCode.Created) {
         this.cityList.push(data);
-        this.cityList = sortCityArr(this.cityList);
+        this.cityList = sortObjArrByProp<City>(this.cityList, 'name');
         this.cityForm.reset({ isActive: true });
       }
     });
@@ -209,7 +201,6 @@ export class CityComponent {
 
   deleteOnClick(cityId: string) {
     this.dataService.deleteCityById(cityId).then(res => {
-      console.log(res);
       const { status } = res;
       if (status === StatusCode.Ok) {
         this.cityList = this.cityList.filter(city => city._id !== cityId);
