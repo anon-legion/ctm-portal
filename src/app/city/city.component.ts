@@ -15,6 +15,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatListModule, MatListOption } from '@angular/material/list';
 import { MatDividerModule } from '@angular/material/divider';
+import { MatSnackBarModule, MatSnackBar } from '@angular/material/snack-bar';
 // import { MatTable, MatTableModule } from '@angular/material/table';
 import { DataService } from '../data.service';
 import { City } from '../types';
@@ -34,6 +35,7 @@ import { sortObjArrByProp, toTitleCase } from '../shared/utils';
     MatSlideToggleModule,
     MatListModule,
     MatDividerModule,
+    MatSnackBarModule,
     // MatTableModule,
   ],
   template: `
@@ -144,7 +146,10 @@ export class CityComponent {
   selectedCity = '';
   displayedColumns: string[] = ['city', 'is active'];
 
-  constructor(private router: Router) {
+  constructor(
+    private router: Router,
+    private _snackBar: MatSnackBar
+  ) {
     this.dataService.getAllCities().then(res => {
       if (res.ok) {
         this.cityList = sortObjArrByProp<City>(res.data, 'name');
@@ -166,6 +171,7 @@ export class CityComponent {
         const { status, data } = res;
         if (status === StatusCode.NotFound) return;
         if (status === StatusCode.Ok) {
+          this._snackBar.open('Update success', 'Close', { duration: 2500 });
           const index = this.cityList.findIndex(
             city => city._id === this.selectedCity
           );

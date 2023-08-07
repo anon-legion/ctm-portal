@@ -16,6 +16,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatListModule, MatListOption } from '@angular/material/list';
 import { MatDividerModule } from '@angular/material/divider';
+import { MatSnackBarModule, MatSnackBar } from '@angular/material/snack-bar';
 import { DataService } from '../data.service';
 import { City, BusRoute } from '../types';
 import { sortObjArrByProp, toTitleCase } from '../shared/utils';
@@ -35,11 +36,14 @@ import { sortObjArrByProp, toTitleCase } from '../shared/utils';
     MatSlideToggleModule,
     MatListModule,
     MatDividerModule,
+    MatSnackBarModule,
   ],
   template: `
     <mat-form-field appearance="outline" color="accent">
       <mat-label>Select a city</mat-label>
-      <mat-select [(value)]="selectedCity">
+      <mat-select
+        [(value)]="selectedCity"
+        (ngModelChange)="selectedCityOnChange(selectedCity)">
         <mat-option *ngFor="let city of cityList" [value]="city">{{
           city.name
         }}</mat-option>
@@ -126,7 +130,7 @@ export class CityRouteComponent {
   selectedCity: City = {} as City;
   isEditMode = false;
 
-  constructor() {
+  constructor(private _snackBar: MatSnackBar) {
     const cityId = this.route.snapshot.params['id'];
 
     this.dataService.getRoutesByCityId(cityId).then(res => {
@@ -179,6 +183,7 @@ export class CityRouteComponent {
           const { status, data } = res;
           if (status === StatusCode.NotFound) return;
           if (status === StatusCode.Ok) {
+            this._snackBar.open('Update success', 'Close', { duration: 2500 });
             const index = this.routeList.findIndex(
               route => route._id === this.selectedBusRoute
             );
@@ -236,5 +241,9 @@ export class CityRouteComponent {
 
   navigateTo(busRouteId: string) {
     console.log(busRouteId);
+  }
+
+  selectedCityOnChange(city: City) {
+    console.log(city);
   }
 }
