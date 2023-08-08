@@ -1,14 +1,15 @@
 export interface City {
   _id: string;
   name: string;
-  isActive?: boolean;
+  isActive: boolean;
 }
 
-export interface BusRoute {
-  _id: string;
+export interface BusRoute extends City {
   cityId: string;
-  name: string;
-  isActive?: boolean;
+}
+
+export interface Place extends BusRoute {
+  alias: string[];
 }
 
 export type ApiResponse<T> = {

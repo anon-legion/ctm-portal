@@ -151,6 +151,7 @@ export class BusRouteComponent {
   allCity: City = {
     _id: 'all',
     name: 'all routes',
+    isActive: true,
   };
 
   constructor(

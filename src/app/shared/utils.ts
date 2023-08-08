@@ -1,6 +1,6 @@
-import { City, BusRoute } from '../types';
+import { City, BusRoute, Place } from '../types';
 
-export function sortObjArrByProp<T extends City | BusRoute>(
+export function sortObjArrByProp<T extends City | BusRoute | Place>(
   arr: Array<T>,
   prop: keyof T
 ) {
