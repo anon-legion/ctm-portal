@@ -21,6 +21,22 @@ import { DataService } from '../data.service';
 import { City, BusRoute } from '../types';
 import { sortObjArrByProp, toTitleCase } from '../shared/utils';
 
+function getAllBusRoutes(service: DataService, routeList: BusRoute[]) {
+  // reassign the reference to the array to update the view
+  function setRouteList(newList: BusRoute[]) {
+    routeList.length = 0;
+    routeList.push(...newList);
+  }
+
+  service.getAllBusRoutes().then(res => {
+    if (res.status !== StatusCode.Ok || !res.data.length) {
+      setRouteList([]);
+      return;
+    }
+    setRouteList(sortObjArrByProp<BusRoute>(res.data, 'name') as BusRoute[]);
+  });
+}
+
 @Component({
   selector: 'app-bus-route',
   standalone: true,
@@ -45,9 +61,10 @@ import { sortObjArrByProp, toTitleCase } from '../shared/utils';
         <mat-select
           [(value)]="selectedCity"
           (selectionChange)="selectCityOnChange($event)">
-          <mat-option *ngFor="let city of cityList" [value]="city">{{
-            city.name
-          }}</mat-option>
+          <mat-option [value]="allCity">All Routes</mat-option>
+          <mat-option *ngFor="let city of cityList" [value]="city">
+            {{ city.name }}
+          </mat-option>
         </mat-select>
       </mat-form-field>
     </div>
@@ -131,6 +148,10 @@ export class BusRouteComponent {
   selectedBusRoute = '';
   selectedCity: City = {} as City;
   isEditMode = false;
+  allCity: City = {
+    _id: 'all',
+    name: 'all routes',
+  };
 
   constructor(
     private _snackBar: MatSnackBar,
@@ -139,48 +160,41 @@ export class BusRouteComponent {
     const cityId = this.route.snapshot.queryParamMap.get('cityId');
 
     if (!cityId) {
-      this.dataService.getAllBusRoutes().then(res => {
-        if (res.status === StatusCode.Ok && res.data.length) {
-          this.routeList = sortObjArrByProp<BusRoute>(
-            res.data,
-            'name'
-          ) as BusRoute[];
-        } else {
-          this.routeList = [];
-        }
-      });
-    }
-
-    if (cityId) {
-      this.dataService.getRoutesByCityId(cityId).then(res => {
-        if (res.status === StatusCode.Ok && res.data.length) {
-          this.routeList = sortObjArrByProp<BusRoute>(
-            res.data,
-            'name'
-          ) as BusRoute[];
-        } else {
-          this.routeList = [];
-        }
-      });
-    }
-
-    // check data service cityId in cached cityList
-    const currentCity = this.cityList.find(city => city._id === cityId);
-
-    if (currentCity) {
-      this.selectedCity = currentCity;
+      this.selectedCity = this.allCity;
+      this.dataService.getAllCities();
+      // get all bus routes and assign to routeList
+      getAllBusRoutes(this.dataService, this.routeList);
       return;
     }
 
     this.dataService.getAllCities().then(res => {
-      if (res.status === StatusCode.Ok && res.data.length) {
-        const cityList = res.data as City[];
-        const currentCity = cityList.find(city => city._id === cityId);
+      const cityList = res.data as City[];
+      const currentCity = cityList.find(city => city._id === cityId);
 
-        if (currentCity) {
-          this.selectedCity = currentCity;
-        }
+      // if cityId is not valid, set allCity and get all routes
+      if (!currentCity) {
+        this.selectedCity = this.allCity;
+        // get all bus routes and assign to routeList
+        getAllBusRoutes(this.dataService, this.routeList);
+        // navigate to the same route without query params
+        this.router.navigate([], {
+          relativeTo: this.route,
+        });
+        return;
       }
+      this.selectedCity = currentCity;
+    });
+
+    this.dataService.getRoutesByCityId(cityId).then(res => {
+      if (res.status !== StatusCode.Ok) {
+        this.selectedCity = this.allCity;
+        getAllBusRoutes(this.dataService, this.routeList);
+        return;
+      }
+      this.routeList = sortObjArrByProp<BusRoute>(
+        res.data,
+        'name'
+      ) as BusRoute[];
     });
   }
 
@@ -206,11 +220,14 @@ export class BusRouteComponent {
           if (status === StatusCode.NotFound) return;
           if (status === StatusCode.Ok) {
             this._snackBar.open('Update success', 'Close', { duration: 2500 });
-            const index = this.routeList.findIndex(
-              route => route._id === this.selectedBusRoute
+            const updatedRouteList = this.routeList.filter(
+              route => route._id !== this.selectedBusRoute
             );
-            this.routeList[index] = data;
-            this.routeList = sortObjArrByProp<BusRoute>(this.routeList, 'name');
+            updatedRouteList.push(data);
+            this.routeList = sortObjArrByProp<BusRoute>(
+              updatedRouteList,
+              'name'
+            );
             this.busRouteForm.reset({ isActive: true });
             this.isEditMode = false;
           }
@@ -266,6 +283,22 @@ export class BusRouteComponent {
   }
 
   selectCityOnChange(e: MatSelectChange) {
+    if (e.value === this.allCity) {
+      this.dataService.getAllBusRoutes().then(res => {
+        if (res.status === StatusCode.Ok && res.data.length) {
+          this.routeList = sortObjArrByProp<BusRoute>(
+            res.data,
+            'name'
+          ) as BusRoute[];
+          this.router.navigate([], {
+            relativeTo: this.route,
+          });
+        } else {
+          this.routeList = [];
+        }
+      });
+      return;
+    }
     const city = e.value as City;
     this.dataService.getRoutesByCityId(city._id).then(res => {
       if (res.status === StatusCode.Ok && res.data.length) {
