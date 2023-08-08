@@ -137,7 +137,6 @@ import { sortObjArrByProp, toTitleCase } from '../shared/utils';
 export class CityComponent {
   title = 'CTM Builder';
   dataService: DataService = inject(DataService);
-  cityList: City[] = [];
   cityForm = new FormGroup({
     name: new FormControl('', [Validators.required, Validators.minLength(4)]),
     isActive: new FormControl(true, [Validators.required]),
@@ -155,6 +154,14 @@ export class CityComponent {
         this.cityList = sortObjArrByProp<City>(res.data, 'name');
       }
     });
+  }
+
+  get cityList() {
+    return this.dataService.cityList;
+  }
+
+  set cityList(value: City[]) {
+    this.dataService.cityList = value;
   }
 
   cityFormOnSubmit() {
@@ -226,9 +233,10 @@ export class CityComponent {
   }
 
   navigateTo(route: string) {
-    const currentUrl = this.router.url;
-    const newUrl = `${currentUrl}/${route}`;
-    this.router.navigateByUrl(newUrl);
+    this.router.navigate(['bus-routes'], {
+      queryParams: { cityId: route },
+      queryParamsHandling: 'merge',
+    });
   }
 
   // rowOnClick(row: City) {

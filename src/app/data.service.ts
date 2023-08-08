@@ -6,7 +6,7 @@ import { City, BusRoute, ApiResponse } from './types';
 })
 export class DataService {
   public cityList: City[] = [];
-  public routeList: BusRoute[] = [];
+  public busRouteList: BusRoute[] = [];
 
   url = 'http://localhost:3000/api/v1';
 
@@ -57,7 +57,7 @@ export class DataService {
   async getRoutesByCityId(id: string): Promise<ApiResponse<BusRoute[]>> {
     const res = await fetch(`${this.url}/cities/${id}/bus-routes`);
     const json = (await res.json()) ?? [];
-    this.routeList = [...json];
+    this.busRouteList = [...json];
     return { status: res.status, ok: res.ok, data: json };
   }
 
@@ -92,6 +92,13 @@ export class DataService {
     };
     const res = await fetch(`${this.url}/bus-routes/${id}`, options);
     const json = (await res.json()) ?? {};
+    return { status: res.status, ok: res.ok, data: json };
+  }
+
+  async getAllBusRoutes(): Promise<ApiResponse<BusRoute[]>> {
+    const res = await fetch(`${this.url}/bus-routes`);
+    const json = (await res.json()) ?? [];
+    this.busRouteList = [...json];
     return { status: res.status, ok: res.ok, data: json };
   }
 }

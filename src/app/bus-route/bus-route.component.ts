@@ -1,6 +1,6 @@
 import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ActivatedRoute, RouterModule } from '@angular/router';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import {
   FormControl,
   FormGroup,
@@ -22,7 +22,7 @@ import { City, BusRoute } from '../types';
 import { sortObjArrByProp, toTitleCase } from '../shared/utils';
 
 @Component({
-  selector: 'app-city-route',
+  selector: 'app-bus-route',
   standalone: true,
   imports: [
     CommonModule,
@@ -118,9 +118,9 @@ import { sortObjArrByProp, toTitleCase } from '../shared/utils';
       </button>
     </div>
   `,
-  styleUrls: ['./city-route.component.scss'],
+  styleUrls: ['./bus-route.component.scss'],
 })
-export class CityRouteComponent {
+export class BusRouteComponent {
   route = inject(ActivatedRoute);
   dataService: DataService = inject(DataService);
   busRouteForm = new FormGroup({
@@ -132,19 +132,37 @@ export class CityRouteComponent {
   selectedCity: City = {} as City;
   isEditMode = false;
 
-  constructor(private _snackBar: MatSnackBar) {
-    const cityId = this.route.snapshot.params['id'];
+  constructor(
+    private _snackBar: MatSnackBar,
+    private router: Router
+  ) {
+    const cityId = this.route.snapshot.queryParamMap.get('cityId');
 
-    this.dataService.getRoutesByCityId(cityId).then(res => {
-      if (res.status === StatusCode.Ok && res.data.length) {
-        this.routeList = sortObjArrByProp<BusRoute>(
-          res.data,
-          'name'
-        ) as BusRoute[];
-      } else {
-        this.routeList = [];
-      }
-    });
+    if (!cityId) {
+      this.dataService.getAllBusRoutes().then(res => {
+        if (res.status === StatusCode.Ok && res.data.length) {
+          this.routeList = sortObjArrByProp<BusRoute>(
+            res.data,
+            'name'
+          ) as BusRoute[];
+        } else {
+          this.routeList = [];
+        }
+      });
+    }
+
+    if (cityId) {
+      this.dataService.getRoutesByCityId(cityId).then(res => {
+        if (res.status === StatusCode.Ok && res.data.length) {
+          this.routeList = sortObjArrByProp<BusRoute>(
+            res.data,
+            'name'
+          ) as BusRoute[];
+        } else {
+          this.routeList = [];
+        }
+      });
+    }
 
     // check data service cityId in cached cityList
     const currentCity = this.cityList.find(city => city._id === cityId);
@@ -248,7 +266,6 @@ export class CityRouteComponent {
   }
 
   selectCityOnChange(e: MatSelectChange) {
-    console.log(e.value);
     const city = e.value as City;
     this.dataService.getRoutesByCityId(city._id).then(res => {
       if (res.status === StatusCode.Ok && res.data.length) {
@@ -256,6 +273,11 @@ export class CityRouteComponent {
           res.data,
           'name'
         ) as BusRoute[];
+        this.router.navigate([], {
+          relativeTo: this.route,
+          queryParams: { cityId: city._id },
+          queryParamsHandling: 'merge',
+        });
         return;
       }
       this.routeList = [];
