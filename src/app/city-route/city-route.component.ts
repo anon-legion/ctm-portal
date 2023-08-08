@@ -11,7 +11,7 @@ import { HttpStatusCode as StatusCode } from '@angular/common/http';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatInputModule } from '@angular/material/input';
-import { MatSelectModule } from '@angular/material/select';
+import { MatSelectChange, MatSelectModule } from '@angular/material/select';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatListModule, MatListOption } from '@angular/material/list';
@@ -39,16 +39,18 @@ import { sortObjArrByProp, toTitleCase } from '../shared/utils';
     MatSnackBarModule,
   ],
   template: `
-    <mat-form-field appearance="outline" color="accent">
-      <mat-label>Select a city</mat-label>
-      <mat-select
-        [(value)]="selectedCity"
-        (ngModelChange)="selectedCityOnChange(selectedCity)">
-        <mat-option *ngFor="let city of cityList" [value]="city">{{
-          city.name
-        }}</mat-option>
-      </mat-select>
-    </mat-form-field>
+    <div class="is-flex width-breakpoint-768">
+      <mat-form-field appearance="outline" color="accent">
+        <mat-label>Select a city</mat-label>
+        <mat-select
+          [(value)]="selectedCity"
+          (selectionChange)="selectCityOnChange($event)">
+          <mat-option *ngFor="let city of cityList" [value]="city">{{
+            city.name
+          }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+    </div>
 
     <form
       class="container is-flex is-flex-direction-column mb-2 width-breakpoint-768"
@@ -134,11 +136,13 @@ export class CityRouteComponent {
     const cityId = this.route.snapshot.params['id'];
 
     this.dataService.getRoutesByCityId(cityId).then(res => {
-      if (res.ok) {
+      if (res.status === StatusCode.Ok && res.data.length) {
         this.routeList = sortObjArrByProp<BusRoute>(
           res.data,
           'name'
         ) as BusRoute[];
+      } else {
+        this.routeList = [];
       }
     });
 
@@ -151,7 +155,7 @@ export class CityRouteComponent {
     }
 
     this.dataService.getAllCities().then(res => {
-      if (res.ok) {
+      if (res.status === StatusCode.Ok && res.data.length) {
         const cityList = res.data as City[];
         const currentCity = cityList.find(city => city._id === cityId);
 
@@ -243,7 +247,18 @@ export class CityRouteComponent {
     console.log(busRouteId);
   }
 
-  selectedCityOnChange(city: City) {
-    console.log(city);
+  selectCityOnChange(e: MatSelectChange) {
+    console.log(e.value);
+    const city = e.value as City;
+    this.dataService.getRoutesByCityId(city._id).then(res => {
+      if (res.status === StatusCode.Ok && res.data.length) {
+        this.routeList = sortObjArrByProp<BusRoute>(
+          res.data,
+          'name'
+        ) as BusRoute[];
+        return;
+      }
+      this.routeList = [];
+    });
   }
 }

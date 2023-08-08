@@ -7,6 +7,7 @@ const routes: Routes = [
   { path: '', redirectTo: 'cities', pathMatch: 'full' },
   { path: 'cities', component: CityComponent },
   { path: 'cities/:id', component: CityRouteComponent },
+  { path: 'bus-routes', component: CityRouteComponent },
   { path: '**', redirectTo: 'cities' },
 ];
 
