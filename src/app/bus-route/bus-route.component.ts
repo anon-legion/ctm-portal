@@ -182,19 +182,19 @@ export class BusRouteComponent {
         });
         return;
       }
-      this.selectedCity = currentCity;
-    });
 
-    this.dataService.getRoutesByCityId(cityId).then(res => {
-      if (res.status !== StatusCode.Ok) {
-        this.selectedCity = this.allCity;
-        getAllBusRoutes(this.dataService, this.routeList);
-        return;
-      }
-      this.routeList = sortObjArrByProp<BusRoute>(
-        res.data,
-        'name'
-      ) as BusRoute[];
+      this.selectedCity = currentCity;
+
+      this.dataService.getRoutesByCityId(cityId).then(res => {
+        if (res.status === StatusCode.Ok && res.data.length) {
+          this.routeList = sortObjArrByProp<BusRoute>(
+            res.data,
+            'name'
+          ) as BusRoute[];
+          return;
+        }
+        this.routeList = [];
+      });
     });
   }
 
@@ -306,14 +306,14 @@ export class BusRouteComponent {
           res.data,
           'name'
         ) as BusRoute[];
-        this.router.navigate([], {
-          relativeTo: this.route,
-          queryParams: { cityId: city._id },
-          queryParamsHandling: 'merge',
-        });
         return;
       }
       this.routeList = [];
+      this.router.navigate([], {
+        relativeTo: this.route,
+        queryParams: { cityId: city._id },
+        queryParamsHandling: 'merge',
+      });
     });
   }
 }
