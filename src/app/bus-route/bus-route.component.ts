@@ -205,6 +205,12 @@ export class BusRouteComponent {
 
   busRouteFormOnSubmit() {
     if (!this.busRouteForm.value.name) return;
+    if (this.selectedCity === this.allCity) {
+      this._snackBar.open('Please select a city', 'Close', {
+        duration: 3000,
+      });
+      return;
+    }
 
     const formData = {
       cityId: this.selectedCity._id,
@@ -220,7 +226,7 @@ export class BusRouteComponent {
           const { status, data } = res;
           if (status === StatusCode.NotFound) return;
           if (status === StatusCode.Ok) {
-            this._snackBar.open('Update success', 'Close', { duration: 2500 });
+            this._snackBar.open('Update success', 'Close', { duration: 3000 });
             const updatedRouteList = this.routeList.filter(
               route => route._id !== this.selectedBusRoute
             );
@@ -302,6 +308,11 @@ export class BusRouteComponent {
     }
     const city = e.value as City;
     this.dataService.getRoutesByCityId(city._id).then(res => {
+      this.router.navigate([], {
+        relativeTo: this.route,
+        queryParams: { cityId: city._id },
+        queryParamsHandling: 'merge',
+      });
       if (res.status === StatusCode.Ok && res.data.length) {
         this.routeList = sortObjArrByProp<BusRoute>(
           res.data,
@@ -310,11 +321,6 @@ export class BusRouteComponent {
         return;
       }
       this.routeList = [];
-      this.router.navigate([], {
-        relativeTo: this.route,
-        queryParams: { cityId: city._id },
-        queryParamsHandling: 'merge',
-      });
     });
   }
 }

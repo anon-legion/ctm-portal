@@ -17,6 +17,11 @@ import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatListModule, MatListOption } from '@angular/material/list';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatSnackBarModule, MatSnackBar } from '@angular/material/snack-bar';
+import {
+  MatChip,
+  MatChipInputEvent,
+  MatChipsModule,
+} from '@angular/material/chips';
 import { DataService } from '../data.service';
 import { Place, City } from '../types';
 import { sortObjArrByProp, toTitleCase } from '../shared/utils';
@@ -37,6 +42,7 @@ import { sortObjArrByProp, toTitleCase } from '../shared/utils';
     MatListModule,
     MatDividerModule,
     MatSnackBarModule,
+    MatChipsModule,
   ],
   template: `
     <div class="is-flex width-breakpoint-768">
@@ -64,16 +70,16 @@ import { sortObjArrByProp, toTitleCase } from '../shared/utils';
           formControlName="name"
           class="is-capitalized" />
       </mat-form-field>
-      <!-- <mat-form-field>
+      <mat-form-field appearance="outline" color="accent">
         <mat-label>Place alias</mat-label>
         <mat-chip-grid
           #chipGrid
           aria-label="Enter aliases"
           formControlName="alias">
           <mat-chip-row
-            *ngFor="let keyword of keywords"
-            (removed)="removeKeyword(keyword)">
-            {{ keyword }}
+            *ngFor="let alias of aliasControl.value"
+            (removed)="removeKeyword(alias)">
+            {{ alias }}
             <button matChipRemove aria-label="'remove ' + keyword">
               <mat-icon>cancel</mat-icon>
             </button>
@@ -83,7 +89,7 @@ import { sortObjArrByProp, toTitleCase } from '../shared/utils';
           placeholder="New keyword..."
           [matChipInputFor]="chipGrid"
           (matChipInputTokenEnd)="add($event)" />
-      </mat-form-field> -->
+      </mat-form-field>
       <mat-slide-toggle class="mb-2" color="accent" formControlName="isActive">
         {{ placeForm.value.isActive ? 'Active' : 'Inactive' }}
       </mat-slide-toggle>
@@ -144,10 +150,16 @@ import { sortObjArrByProp, toTitleCase } from '../shared/utils';
 export class PlacesComponent {
   route = inject(ActivatedRoute);
   dataService: DataService = inject(DataService);
+  nameControl = new FormControl('', [
+    Validators.required,
+    Validators.minLength(3),
+  ]);
+  aliasControl = new FormControl(['foo', 'bar', 'baz'] as string[]);
+  isActiveControl = new FormControl(true, [Validators.required]);
   placeForm = new FormGroup({
-    name: new FormControl('', [Validators.required, Validators.minLength(3)]),
-    alias: new FormControl([] as string[]),
-    isActive: new FormControl(true, [Validators.required]),
+    name: this.nameControl,
+    alias: this.aliasControl,
+    isActive: this.isActiveControl,
   });
   placeList: Place[] = [];
   selectedPlace = '';
@@ -244,5 +256,28 @@ export class PlacesComponent {
     //   });
     // });
     console.log(city);
+  }
+
+  removeKeyword(alias: string) {
+    const index = this.aliasControl.value?.indexOf(alias);
+    if (index !== undefined && index >= 0) {
+      this.aliasControl.value?.splice(index, 1);
+    }
+  }
+
+  add(event: MatChipInputEvent): void {
+    const value = (event.value || '').trim();
+    const filteredAlias = this.aliasControl.value?.filter(
+      alias => alias !== value
+    );
+
+    // Add alias
+    if (value && filteredAlias) {
+      filteredAlias?.push(value);
+      this.aliasControl.setValue(filteredAlias);
+    }
+
+    // Clear the input value
+    event.chipInput.clear();
   }
 }
