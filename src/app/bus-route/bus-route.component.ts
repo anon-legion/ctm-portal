@@ -219,7 +219,6 @@ export class BusRouteComponent {
     } as BusRoute;
 
     if (this.isEditMode) {
-      formData._id = this.selectedBusRoute;
       this.dataService
         .updateBusRouteById(this.selectedBusRoute, formData)
         .then(res => {
@@ -263,10 +262,17 @@ export class BusRouteComponent {
     this.selectedBusRoute = selectedOption.value;
   }
 
+  // todo: update path query and selected city
+  // on city change when route is selected for editing
   editOnClick(busRouteId: string) {
     const busRouteData = this.routeList.find(route => route._id === busRouteId);
     if (!busRouteData) return;
+    const busRouteCity = this.cityList.find(
+      city => city._id === busRouteData.cityId
+    );
+    if (!busRouteCity) return;
     this.isEditMode = true;
+    this.selectedCity = busRouteCity;
     this.busRouteForm.setValue({
       name: busRouteData.name,
       isActive: busRouteData.isActive ?? true,

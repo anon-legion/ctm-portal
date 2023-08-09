@@ -34,9 +34,7 @@ export class DataService {
     return { status: res.status, ok: res.ok, data: json };
   }
 
-  async deleteCityById(
-    id: string
-  ): Promise<ApiResponse<City | Record<string, string>>> {
+  async deleteCityById(id: string): Promise<ApiResponse<City>> {
     const options = { method: 'DELETE' };
     const res = await fetch(`${this.url}/cities/${id}`, options);
     const json = (await res.json()) ?? {};
@@ -72,9 +70,7 @@ export class DataService {
     return { status: res.status, ok: res.ok, data: json };
   }
 
-  async deleteBusRouteById(
-    id: string
-  ): Promise<ApiResponse<BusRoute | Record<string, string>>> {
+  async deleteBusRouteById(id: string): Promise<ApiResponse<BusRoute>> {
     const options = { method: 'DELETE' };
     const res = await fetch(`${this.url}/bus-routes/${id}`, options);
     const json = (await res.json()) ?? {};
@@ -117,6 +113,24 @@ export class DataService {
     const res = await fetch(`${this.url}/places`);
     const json = (await res.json()) ?? [];
     this.busRouteList = [...json];
+    return { status: res.status, ok: res.ok, data: json };
+  }
+
+  async deletePlaceById(id: string): Promise<ApiResponse<Place>> {
+    const options = { method: 'DELETE' };
+    const res = await fetch(`${this.url}/places/${id}`, options);
+    const json = (await res.json()) ?? {};
+    return { status: res.status, ok: res.ok, data: json };
+  }
+
+  async updatePlaceById(id: string, data: Place): Promise<ApiResponse<Place>> {
+    const options = {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    };
+    const res = await fetch(`${this.url}/places/${id}`, options);
+    const json = (await res.json()) ?? {};
     return { status: res.status, ok: res.ok, data: json };
   }
 }

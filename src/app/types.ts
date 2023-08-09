@@ -9,7 +9,7 @@ export interface BusRoute extends City {
 }
 
 export interface Place extends BusRoute {
-  alias: string[];
+  aliases: string[];
 }
 
 export type ApiResponse<T> = {

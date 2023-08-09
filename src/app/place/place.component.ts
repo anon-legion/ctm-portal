@@ -31,13 +31,12 @@ function getAllPlaces(service: DataService, placeList: TableDataSource) {
       placeList.setData([]);
       return;
     }
-    console.log(res.data);
     placeList.setData(res.data);
   });
 }
 
 @Component({
-  selector: 'app-places',
+  selector: 'app-place',
   standalone: true,
   imports: [
     CommonModule,
@@ -55,138 +54,17 @@ function getAllPlaces(service: DataService, placeList: TableDataSource) {
     MatChipsModule,
     MatTableModule,
   ],
-  template: `
-    <div class="is-flex width-breakpoint-768">
-      <mat-form-field appearance="outline" color="accent">
-        <mat-label>Select a city</mat-label>
-        <mat-select
-          [(value)]="selectedCity"
-          (selectionChange)="selectCityOnChange($event)">
-          <mat-option [value]="allCity">All Routes</mat-option>
-          <mat-option *ngFor="let city of cityList" [value]="city">
-            {{ city.name }}
-          </mat-option>
-        </mat-select>
-      </mat-form-field>
-    </div>
-
-    <form
-      class="container is-flex is-flex-direction-column mb-2 width-breakpoint-768"
-      [formGroup]="placeForm">
-      <mat-form-field appearance="outline" color="accent">
-        <mat-label>Place Name</mat-label>
-        <input
-          matInput
-          type="text"
-          formControlName="name"
-          class="is-capitalized" />
-      </mat-form-field>
-      <mat-form-field appearance="outline" color="accent">
-        <mat-label>Place alias</mat-label>
-        <mat-chip-grid
-          #chipGrid
-          aria-label="Enter aliases"
-          formControlName="aliases">
-          <mat-chip-row
-            *ngFor="let alias of aliasControl.value"
-            (removed)="removeKeyword(alias)">
-            {{ alias }}
-            <button matChipRemove aria-label="'remove ' + keyword">
-              <mat-icon>cancel</mat-icon>
-            </button>
-          </mat-chip-row>
-        </mat-chip-grid>
-        <input
-          placeholder="New keyword..."
-          [matChipInputFor]="chipGrid"
-          (matChipInputTokenEnd)="add($event)" />
-      </mat-form-field>
-      <mat-slide-toggle class="mb-2" color="accent" formControlName="isActive">
-        {{ placeForm.value.isActive ? 'Active' : 'Inactive' }}
-      </mat-slide-toggle>
-      <button
-        type="button"
-        mat-raised-button
-        color="primary"
-        [disabled]="!placeForm.valid"
-        (click)="placeFormOnSubmit()">
-        {{ isEditMode ? 'Update' : 'Add' }}
-      </button>
-    </form>
-
-    <mat-divider class="width-breakpoint-768"></mat-divider>
-    <div class="list-container mt-2 width-breakpoint-768">
-      <!-- <mat-selection-list
-        #places
-        [multiple]="false"
-        (selectionChange)="selectionOnChange(places.selectedOptions.selected)">
-        <mat-list-option
-          *ngFor="let place of placeList"
-          [value]="place._id"
-          [selected]="">
-          {{ place.name }}
-        </mat-list-option>
-      </mat-selection-list> -->
-
-      <table mat-table [dataSource]="placeList">
-        <ng-container matColumnDef="name">
-          <th mat-header-cell *matHeaderCellDef>Place</th>
-          <td mat-cell *matCellDef="let element">{{ element.name }}</td>
-        </ng-container>
-
-        <ng-container matColumnDef="cityId">
-          <th mat-header-cell *matHeaderCellDef>City</th>
-          <td mat-cell *matCellDef="let element">{{ element.cityId }}</td>
-        </ng-container>
-
-        <ng-container matColumnDef="isActive">
-          <th mat-header-cell *matHeaderCellDef>Active</th>
-          <td mat-cell *matCellDef="let element">{{ element.isActive }}</td>
-        </ng-container>
-
-        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-        <tr
-          mat-row
-          (click)="rowOnClick(row)"
-          *matRowDef="let row; columns: displayedColumns"></tr>
-      </table>
-    </div>
-
-    <div
-      class="is-flex is-justify-content-space-around mt-4 width-breakpoint-768">
-      <button
-        mat-raised-button
-        color="accent"
-        class="uniform-button"
-        (click)="editOnClick(selectedPlace)">
-        Edit
-      </button>
-      <button
-        mat-raised-button
-        color="warn"
-        class="uniform-button"
-        (click)="deleteOnClick(selectedPlace)">
-        Delete
-      </button>
-      <button
-        mat-raised-button
-        color="accent"
-        class="uniform-button"
-        (click)="navigateTo(selectedPlace)">
-        Add Stops
-      </button>
-    </div>
-  `,
-  styleUrls: ['./places.component.scss'],
+  templateUrl: './place.component.html',
+  styleUrls: ['./place.component.scss'],
 })
-export class PlacesComponent {
+export class PlaceComponent {
   route = inject(ActivatedRoute);
   dataService: DataService = inject(DataService);
   nameControl = new FormControl('', [
     Validators.required,
     Validators.minLength(3),
   ]);
-  aliasControl = new FormControl(['foo', 'bar', 'baz'] as string[]);
+  aliasControl = new FormControl([] as string[]);
   isActiveControl = new FormControl(true, [Validators.required]);
   placeForm = new FormGroup({
     name: this.nameControl,
@@ -196,7 +74,7 @@ export class PlacesComponent {
   // placeList: Place[] = [];
   placeList = new TableDataSource([]);
   selectedPlace = '';
-  selectedCity: City = {} as City;
+  selectedCity = {} as City;
   isEditMode = false;
   allCity: City = {
     _id: 'all',
@@ -229,11 +107,16 @@ export class PlacesComponent {
 
   placeFormOnSubmit() {
     if (!this.placeForm.value.name) return;
+    if (this.selectedCity === this.allCity) {
+      this._snackBar.open('Please select a city', 'Close', { duration: 3000 });
+      return;
+    }
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const formData = {
       cityId: this.selectedCity._id,
       name: toTitleCase(this.placeForm.value.name),
+      aliases: this.placeForm.value.aliases,
       isActive: this.placeForm.value.isActive,
     } as Place;
 
@@ -265,20 +148,17 @@ export class PlacesComponent {
     this.selectedPlace = selectedOption.value;
   }
 
-  editOnClick(placeId: string) {
-    const placeData = this.placeList.findById(placeId);
-    // const placeData = this.placeList.find(place => place._id === placeId);
-    if (!placeData) return;
-    this.isEditMode = true;
-    this.placeForm.setValue({
-      name: placeData.name,
-      aliases: placeData.alias ?? [],
-      isActive: placeData.isActive ?? true,
-    });
-  }
-
   deleteOnClick(placeId: string) {
-    console.log(placeId);
+    this.dataService.deletePlaceById(placeId).then(res => {
+      const { status } = res;
+      if (status === StatusCode.Ok) {
+        this.placeList.removeById(placeId);
+        this._snackBar.open('Place deleted successfully', 'close', {
+          duration: 3000,
+        });
+        this.selectedPlace = '';
+      }
+    });
   }
 
   navigateTo(placeId: string) {
@@ -287,37 +167,9 @@ export class PlacesComponent {
 
   selectCityOnChange(e: MatSelectChange) {
     if (e.value === this.allCity) {
-      // this.dataService.getAllPlaces().then(res => {
-      //   if (res.status === StatusCode.Ok && res.data.length) {
-      //     this.placeList = sortObjArrByProp<Place>(
-      //       res.data,
-      //       'name'
-      //     ) as Place[];
-      //     this.router.navigate([], {
-      //       relativeTo: this.route,
-      //     });
-      //   } else {
-      //     this.placeList = [];
-      //   }
-      // });
       return;
     }
     const city = e.value as City;
-    // this.dataService.getPlaceByCityId(city._id).then(res => {
-    //   if (res.status === StatusCode.Ok && res.data.length) {
-    //     this.placeList = sortObjArrByProp<Place>(
-    //       res.data,
-    //       'name'
-    //     ) as Place[];
-    //     return;
-    //   }
-    //   this.placeList = [];
-    //   this.router.navigate([], {
-    //     relativeTo: this.route,
-    //     queryParams: { cityId: city._id },
-    //     queryParamsHandling: 'merge',
-    //   });
-    // });
     console.log(city);
   }
 
@@ -329,7 +181,7 @@ export class PlacesComponent {
   }
 
   add(event: MatChipInputEvent): void {
-    const value = (event.value || '').trim();
+    const value = (event.value || '').trim().toUpperCase();
     const filteredAlias = this.aliasControl.value?.filter(
       alias => alias !== value
     );
@@ -345,7 +197,13 @@ export class PlacesComponent {
   }
 
   rowOnClick(row: Place) {
-    console.log(row);
+    this.selectedPlace = row._id;
+    this.isEditMode = true;
+    this.placeForm.setValue({
+      name: row.name,
+      aliases: row.aliases ?? [],
+      isActive: row.isActive ?? true,
+    });
   }
 }
 
@@ -380,5 +238,12 @@ class TableDataSource extends DataSource<Place> {
 
   findById(id: string) {
     return this._dataStream.getValue().find(place => place._id === id);
+  }
+
+  removeById(id: string) {
+    const filteredData = this._dataStream
+      .getValue()
+      .filter(place => place._id !== id);
+    this._dataStream.next(filteredData);
   }
 }
