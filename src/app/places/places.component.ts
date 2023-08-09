@@ -26,19 +26,13 @@ import { DataSource } from '@angular/cdk/collections';
 import { Observable, BehaviorSubject } from 'rxjs';
 
 function getAllPlaces(service: DataService, placeList: TableDataSource) {
-  // reassign the reference to the array to update the view
-  // function setPlaceList(newList: Place[]) {
-  //   placeList.length = 0;
-  //   placeList.push(...newList);
-  // }
-
   service.getAllPlaces().then(res => {
     if (res.status !== StatusCode.Ok || !res.data.length) {
       placeList.setData([]);
       return;
     }
-    const sortedResponse = sortObjArrByProp<Place>(res.data, 'name') as Place[];
-    placeList.setData(sortedResponse);
+    console.log(res.data);
+    placeList.setData(res.data);
   });
 }
 
