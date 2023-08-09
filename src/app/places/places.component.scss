@@ -1,0 +1,12 @@
+td,
+th {
+  vertical-align: middle;
+}
+
+.mat-mdc-row .mat-mdc-cell {
+  cursor: pointer;
+}
+
+.mat-mdc-row:hover .mat-mdc-cell {
+  background-color: hsl(0, 0%, 36%);
+}

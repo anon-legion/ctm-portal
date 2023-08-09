@@ -178,7 +178,7 @@ export class CityComponent {
         const { status, data } = res;
         if (status === StatusCode.NotFound) return;
         if (status === StatusCode.Ok) {
-          this._snackBar.open('Update success', 'Close', { duration: 2500 });
+          this._snackBar.open('Update success', 'Close', { duration: 3000 });
           const index = this.cityList.findIndex(
             city => city._id === this.selectedCity
           );
@@ -193,13 +193,13 @@ export class CityComponent {
 
     this.dataService.addNewCity(formData).then(res => {
       const { status, data } = res;
-      if (status === StatusCode.Conflict) {
-        const control = this.cityForm.get('name');
-        if (!control) return;
+      const control = this.cityForm.get('name');
+      if (status === StatusCode.Conflict && control) {
         control.setErrors({ error: 'duplicate' });
         return;
       }
       if (status === StatusCode.Created) {
+        this._snackBar.open('New city added', 'Close', { duration: 3000 });
         this.cityList.push(data);
         this.cityList = sortObjArrByProp<City>(this.cityList, 'name');
         this.cityForm.reset({ isActive: true });

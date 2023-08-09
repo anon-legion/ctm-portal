@@ -17,14 +17,30 @@ import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatListModule, MatListOption } from '@angular/material/list';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatSnackBarModule, MatSnackBar } from '@angular/material/snack-bar';
-import {
-  MatChip,
-  MatChipInputEvent,
-  MatChipsModule,
-} from '@angular/material/chips';
+import { MatChipInputEvent, MatChipsModule } from '@angular/material/chips';
+import { MatTableModule } from '@angular/material/table';
 import { DataService } from '../data.service';
 import { Place, City } from '../types';
 import { sortObjArrByProp, toTitleCase } from '../shared/utils';
+import { DataSource } from '@angular/cdk/collections';
+import { Observable, BehaviorSubject } from 'rxjs';
+
+function getAllPlaces(service: DataService, placeList: TableDataSource) {
+  // reassign the reference to the array to update the view
+  // function setPlaceList(newList: Place[]) {
+  //   placeList.length = 0;
+  //   placeList.push(...newList);
+  // }
+
+  service.getAllPlaces().then(res => {
+    if (res.status !== StatusCode.Ok || !res.data.length) {
+      placeList.setData([]);
+      return;
+    }
+    const sortedResponse = sortObjArrByProp<Place>(res.data, 'name') as Place[];
+    placeList.setData(sortedResponse);
+  });
+}
 
 @Component({
   selector: 'app-places',
@@ -43,6 +59,7 @@ import { sortObjArrByProp, toTitleCase } from '../shared/utils';
     MatDividerModule,
     MatSnackBarModule,
     MatChipsModule,
+    MatTableModule,
   ],
   template: `
     <div class="is-flex width-breakpoint-768">
@@ -63,7 +80,7 @@ import { sortObjArrByProp, toTitleCase } from '../shared/utils';
       class="container is-flex is-flex-direction-column mb-2 width-breakpoint-768"
       [formGroup]="placeForm">
       <mat-form-field appearance="outline" color="accent">
-        <mat-label>Route Name</mat-label>
+        <mat-label>Place Name</mat-label>
         <input
           matInput
           type="text"
@@ -75,7 +92,7 @@ import { sortObjArrByProp, toTitleCase } from '../shared/utils';
         <mat-chip-grid
           #chipGrid
           aria-label="Enter aliases"
-          formControlName="alias">
+          formControlName="aliases">
           <mat-chip-row
             *ngFor="let alias of aliasControl.value"
             (removed)="removeKeyword(alias)">
@@ -105,19 +122,40 @@ import { sortObjArrByProp, toTitleCase } from '../shared/utils';
 
     <mat-divider class="width-breakpoint-768"></mat-divider>
     <div class="list-container mt-2 width-breakpoint-768">
-      <mat-selection-list
-        #busRoutes
+      <!-- <mat-selection-list
+        #places
         [multiple]="false"
-        (selectionChange)="
-          selectionOnChange(busRoutes.selectedOptions.selected)
-        ">
+        (selectionChange)="selectionOnChange(places.selectedOptions.selected)">
         <mat-list-option
-          *ngFor="let route of placeList"
-          [value]="route._id"
+          *ngFor="let place of placeList"
+          [value]="place._id"
           [selected]="">
-          {{ route.name }}
+          {{ place.name }}
         </mat-list-option>
-      </mat-selection-list>
+      </mat-selection-list> -->
+
+      <table mat-table [dataSource]="placeList">
+        <ng-container matColumnDef="name">
+          <th mat-header-cell *matHeaderCellDef>Place</th>
+          <td mat-cell *matCellDef="let element">{{ element.name }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="cityId">
+          <th mat-header-cell *matHeaderCellDef>City</th>
+          <td mat-cell *matCellDef="let element">{{ element.cityId }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="isActive">
+          <th mat-header-cell *matHeaderCellDef>Active</th>
+          <td mat-cell *matCellDef="let element">{{ element.isActive }}</td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr
+          mat-row
+          (click)="rowOnClick(row)"
+          *matRowDef="let row; columns: displayedColumns"></tr>
+      </table>
     </div>
 
     <div
@@ -158,23 +196,38 @@ export class PlacesComponent {
   isActiveControl = new FormControl(true, [Validators.required]);
   placeForm = new FormGroup({
     name: this.nameControl,
-    alias: this.aliasControl,
+    aliases: this.aliasControl,
     isActive: this.isActiveControl,
   });
-  placeList: Place[] = [];
+  // placeList: Place[] = [];
+  placeList = new TableDataSource([]);
   selectedPlace = '';
   selectedCity: City = {} as City;
   isEditMode = false;
   allCity: City = {
     _id: 'all',
-    name: 'all routes',
+    name: 'all places',
     isActive: true,
   };
+  displayedColumns = ['name', 'cityId', 'isActive'];
 
   constructor(
     private _snackBar: MatSnackBar,
     private router: Router
-  ) {}
+  ) {
+    const cityId = this.route.snapshot.queryParamMap.get('cityId');
+    // this.dataService.getAllCities();
+
+    if (!cityId) {
+      this.selectedCity = this.allCity;
+      this.dataService.getAllCities();
+      // get all places and assign to placeList
+      getAllPlaces(this.dataService, this.placeList);
+      // this.dataService.getAllPlaces().then(res => {
+      //   this.placeList = res.data;
+      // });
+    }
+  }
 
   get cityList() {
     return this.dataService.cityList;
@@ -196,6 +249,21 @@ export class PlacesComponent {
     }
 
     // add new place
+    this.dataService.addNewPlace(formData).then(res => {
+      const { status, data } = res;
+      const control = this.placeForm.get('name');
+      if (status === StatusCode.Conflict && control) {
+        control.setErrors({ error: 'duplicate' });
+        return;
+      }
+      if (status === StatusCode.Created) {
+        this._snackBar.open('Place added successfully', 'close', {
+          duration: 3000,
+        });
+        this.placeList.push(data);
+        this.placeForm.reset({ isActive: true });
+      }
+    });
   }
 
   selectionOnChange(selectedOptions: MatListOption[]) {
@@ -204,12 +272,13 @@ export class PlacesComponent {
   }
 
   editOnClick(placeId: string) {
-    const placeData = this.placeList.find(place => place._id === placeId);
+    const placeData = this.placeList.findById(placeId);
+    // const placeData = this.placeList.find(place => place._id === placeId);
     if (!placeData) return;
     this.isEditMode = true;
     this.placeForm.setValue({
       name: placeData.name,
-      alias: placeData.alias ?? [],
+      aliases: placeData.alias ?? [],
       isActive: placeData.isActive ?? true,
     });
   }
@@ -279,5 +348,43 @@ export class PlacesComponent {
 
     // Clear the input value
     event.chipInput.clear();
+  }
+
+  rowOnClick(row: Place) {
+    console.log(row);
+  }
+}
+
+class TableDataSource extends DataSource<Place> {
+  private _dataStream = new BehaviorSubject<Place[]>([]);
+
+  constructor(initialData: Place[]) {
+    super();
+    this.setData(initialData);
+  }
+
+  connect(): Observable<Place[]> {
+    return this._dataStream;
+  }
+
+  disconnect(): void {
+    this._dataStream.complete();
+  }
+
+  setData(data: Place[]) {
+    const sortedData = sortObjArrByProp<Place>(data, 'name');
+    this._dataStream.next(sortedData);
+  }
+
+  push(data: Place) {
+    const sortedData = sortObjArrByProp<Place>(
+      [...this._dataStream.getValue(), data],
+      'name'
+    );
+    this._dataStream.next(sortedData);
+  }
+
+  findById(id: string) {
+    return this._dataStream.getValue().find(place => place._id === id);
   }
 }

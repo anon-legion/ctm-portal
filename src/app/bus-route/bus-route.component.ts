@@ -244,13 +244,13 @@ export class BusRouteComponent {
 
     this.dataService.addNewBusRoute(formData).then(res => {
       const { status, data } = res;
-      if (status === StatusCode.Conflict) {
-        const control = this.busRouteForm.get('name');
-        if (!control) return;
+      const control = this.busRouteForm.get('name');
+      if (status === StatusCode.Conflict && control) {
         control.setErrors({ error: 'duplicate' });
         return;
       }
       if (status === StatusCode.Created) {
+        this._snackBar.open('New route added', 'Close', { duration: 3000 });
         this.routeList.push(data);
         this.routeList = sortObjArrByProp<BusRoute>(this.routeList, 'name');
         this.busRouteForm.reset({ isActive: true });
