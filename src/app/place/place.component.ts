@@ -14,7 +14,6 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectChange, MatSelectModule } from '@angular/material/select';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
-import { MatListModule, MatListOption } from '@angular/material/list';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatSnackBarModule, MatSnackBar } from '@angular/material/snack-bar';
 import { MatChipInputEvent, MatChipsModule } from '@angular/material/chips';
@@ -48,7 +47,6 @@ function getAllPlaces(service: DataService, placeList: TableDataSource) {
     MatButtonModule,
     MatIconModule,
     MatSlideToggleModule,
-    MatListModule,
     MatDividerModule,
     MatSnackBarModule,
     MatChipsModule,
@@ -70,7 +68,6 @@ export class PlaceComponent implements OnInit, OnDestroy {
     aliases: this.aliasControl,
     isActive: this.isActiveControl,
   });
-  // placeList: Place[] = [];
   placeList = new TableDataSource([]);
   selectedPlace: Place['_id'] = '';
   selectedCity = {} as City;
@@ -89,13 +86,10 @@ export class PlaceComponent implements OnInit, OnDestroy {
     public dataService: DataService
   ) {
     const cityId = this._route.snapshot.queryParamMap.get('cityId');
-    // this.dataService.getAllCities();
 
     if (!cityId) {
       this.selectedCity = this.allCity;
       this.dataService.getAllCities();
-      // get all places and assign to placeList
-      getAllPlaces(this.dataService, this.placeList);
       return;
     }
 
@@ -106,7 +100,6 @@ export class PlaceComponent implements OnInit, OnDestroy {
       // if cityId is not valid, set allCity and get all places
       if (!currentCity) {
         this.selectedCity = this.allCity;
-        getAllPlaces(this.dataService, this.placeList);
         this._router.navigate([], {
           relativeTo: this._route,
         });
@@ -114,14 +107,6 @@ export class PlaceComponent implements OnInit, OnDestroy {
       }
 
       this.selectedCity = currentCity;
-
-      this.dataService.getPlacesByCityId(cityId).then(res => {
-        if (res.status === StatusCode.Ok && res.data.length) {
-          this.placeList.setData(res.data);
-          return;
-        }
-        this.placeList.setData([]);
-      });
     });
   }
 
@@ -136,7 +121,7 @@ export class PlaceComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const control = this.placeForm.get('name');
     const formData = {
       cityId: this.selectedCity._id,
       name: toTitleCase(this.placeForm.value.name),
@@ -151,6 +136,13 @@ export class PlaceComponent implements OnInit, OnDestroy {
         .then(res => {
           const { status, data } = res;
           if (status === StatusCode.NotFound) return;
+          if (status === StatusCode.Conflict && control) {
+            control.setErrors({ error: 'duplicate' });
+            this._snackBar.open('Name already exists', 'Close', {
+              duration: 3000,
+            });
+            return;
+          }
           if (status === StatusCode.Ok) {
             this._snackBar.open('Update success', 'Close', { duration: 3000 });
             this.placeList.updateById(data._id, data);
@@ -165,24 +157,23 @@ export class PlaceComponent implements OnInit, OnDestroy {
     // add new place
     this.dataService.addNewPlace(formData).then(res => {
       const { status, data } = res;
-      const control = this.placeForm.get('name');
       if (status === StatusCode.Conflict && control) {
         control.setErrors({ error: 'duplicate' });
+        this._snackBar.open('Name already exists', 'Close', {
+          duration: 3000,
+        });
         return;
       }
       if (status === StatusCode.Created) {
-        this._snackBar.open('Place added successfully', 'close', {
+        this._snackBar.open('Success', 'Close', {
           duration: 3000,
         });
         this.placeList.push(data);
         this.placeForm.reset({ isActive: true });
+        return;
       }
+      this._snackBar.open('Something went wrong', 'Close', { duration: 3000 });
     });
-  }
-
-  selectionOnChange(selectedOptions: MatListOption[]) {
-    const [selectedOption] = selectedOptions;
-    this.selectedPlace = selectedOption.value;
   }
 
   deleteOnClick(placeId: string) {
@@ -190,10 +181,12 @@ export class PlaceComponent implements OnInit, OnDestroy {
       const { status } = res;
       if (status === StatusCode.Ok) {
         this.placeList.removeById(placeId);
-        this._snackBar.open('Place deleted successfully', 'close', {
+        this._snackBar.open('Deleted', 'Close', {
           duration: 3000,
         });
         this.selectedPlace = '';
+        this.isEditMode = false;
+        this.placeForm.reset({ isActive: true });
       }
     });
   }
@@ -204,8 +197,6 @@ export class PlaceComponent implements OnInit, OnDestroy {
 
   selectCityOnChange(e: MatSelectChange) {
     if (e.value === this.allCity) {
-      // get all places and assign to placeList
-      getAllPlaces(this.dataService, this.placeList);
       // set path to /place
       this._router.navigate([], {
         relativeTo: this._route,
@@ -238,13 +229,13 @@ export class PlaceComponent implements OnInit, OnDestroy {
         alias.toUpperCase().replace(/[^a-zA-Z0-9]/g, '') !== flattenedValue
     );
 
-    // Add alias
+    // add alias
     if (value && filteredAlias) {
       filteredAlias?.push(value);
       this.aliasControl.setValue(filteredAlias);
     }
 
-    // Clear the input value
+    // clear the input value
     event.chipInput.clear();
   }
 
@@ -278,6 +269,7 @@ export class PlaceComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit() {
+    // handles updating placeList when cityId changes
     this._sub = this._route.queryParamMap.subscribe(params => {
       const cityId = params.get('cityId') || '';
       if (!cityId) {
@@ -286,7 +278,7 @@ export class PlaceComponent implements OnInit, OnDestroy {
       }
       this.dataService.getPlacesByCityId(cityId).then(res => {
         const { status, data } = res;
-        if (status === StatusCode.Ok) {
+        if (status === StatusCode.Ok && data.length) {
           this.placeList.setData(data);
           return;
         }
