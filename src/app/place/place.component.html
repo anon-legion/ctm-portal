@@ -80,6 +80,7 @@
     mat-raised-button
     color="warn"
     class="uniform-button"
+    [disabled]="!selectedPlace"
     (click)="deleteOnClick(selectedPlace)">
     Delete
   </button>

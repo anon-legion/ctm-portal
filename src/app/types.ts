@@ -12,6 +12,11 @@ export interface Place extends BusRoute {
   aliases: string[];
 }
 
+export interface PlaceTableData extends City {
+  cityId: City;
+  aliases: string[];
+}
+
 export type ApiResponse<T> = {
   status: number;
   ok: boolean;

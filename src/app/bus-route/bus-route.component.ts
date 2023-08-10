@@ -226,10 +226,14 @@ export class BusRouteComponent {
           if (status === StatusCode.NotFound) return;
           if (status === StatusCode.Ok) {
             this._snackBar.open('Update success', 'Close', { duration: 3000 });
+
+            // filter out old route and add new route to routeList
             const updatedRouteList = this.routeList.filter(
               route => route._id !== this.selectedBusRoute
             );
             updatedRouteList.push(data);
+
+            // update routeList and reset form
             this.routeList = sortObjArrByProp<BusRoute>(
               updatedRouteList,
               'name'
@@ -309,18 +313,10 @@ export class BusRouteComponent {
 
   selectCityOnChange(e: MatSelectChange) {
     if (e.value === this.allCity) {
-      this.dataService.getAllBusRoutes().then(res => {
-        if (res.status === StatusCode.Ok && res.data.length) {
-          this.routeList = sortObjArrByProp<BusRoute>(
-            res.data,
-            'name'
-          ) as BusRoute[];
-          this.router.navigate([], {
-            relativeTo: this.route,
-          });
-        } else {
-          this.routeList = [];
-        }
+      getAllBusRoutes(this.dataService, this.routeList);
+
+      this.router.navigate([], {
+        relativeTo: this.route,
       });
       return;
     }

@@ -1,12 +1,11 @@
 import { Injectable } from '@angular/core';
-import { City, BusRoute, Place, ApiResponse } from './types';
+import { City, BusRoute, Place, PlaceTableData, ApiResponse } from './types';
 
 @Injectable({
   providedIn: 'root',
 })
 export class DataService {
   public cityList: City[] = [];
-  public busRouteList: BusRoute[] = [];
 
   url = 'http://localhost:3000/api/v1';
 
@@ -28,20 +27,23 @@ export class DataService {
     return { status: res.status, ok: res.ok, data: json };
   }
 
-  async getCityById(id: string): Promise<ApiResponse<City>> {
+  async getCityById(id: City['_id']): Promise<ApiResponse<City>> {
     const res = await fetch(`${this.url}/cities/${id}`);
     const json = (await res.json()) ?? {};
     return { status: res.status, ok: res.ok, data: json };
   }
 
-  async deleteCityById(id: string): Promise<ApiResponse<City>> {
+  async deleteCityById(id: City['_id']): Promise<ApiResponse<City>> {
     const options = { method: 'DELETE' };
     const res = await fetch(`${this.url}/cities/${id}`, options);
     const json = (await res.json()) ?? {};
     return { status: res.status, ok: res.ok, data: json };
   }
 
-  async updateCityById(id: string, data: City): Promise<ApiResponse<City>> {
+  async updateCityById(
+    id: City['_id'],
+    data: City
+  ): Promise<ApiResponse<City>> {
     const options = {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
@@ -52,10 +54,9 @@ export class DataService {
     return { status: res.status, ok: res.ok, data: json };
   }
 
-  async getRoutesByCityId(id: string): Promise<ApiResponse<BusRoute[]>> {
+  async getRoutesByCityId(id: City['_id']): Promise<ApiResponse<BusRoute[]>> {
     const res = await fetch(`${this.url}/cities/${id}/bus-routes`);
     const json = (await res.json()) ?? [];
-    this.busRouteList = [...json];
     return { status: res.status, ok: res.ok, data: json };
   }
 
@@ -70,7 +71,9 @@ export class DataService {
     return { status: res.status, ok: res.ok, data: json };
   }
 
-  async deleteBusRouteById(id: string): Promise<ApiResponse<BusRoute>> {
+  async deleteBusRouteById(
+    id: BusRoute['_id']
+  ): Promise<ApiResponse<BusRoute>> {
     const options = { method: 'DELETE' };
     const res = await fetch(`${this.url}/bus-routes/${id}`, options);
     const json = (await res.json()) ?? {};
@@ -78,7 +81,7 @@ export class DataService {
   }
 
   async updateBusRouteById(
-    id: string,
+    id: BusRoute['_id'],
     data: BusRoute
   ): Promise<ApiResponse<BusRoute>> {
     const options = {
@@ -94,11 +97,10 @@ export class DataService {
   async getAllBusRoutes(): Promise<ApiResponse<BusRoute[]>> {
     const res = await fetch(`${this.url}/bus-routes`);
     const json = (await res.json()) ?? [];
-    this.busRouteList = [...json];
     return { status: res.status, ok: res.ok, data: json };
   }
 
-  async addNewPlace(data: Place): Promise<ApiResponse<Place>> {
+  async addNewPlace(data: Place): Promise<ApiResponse<PlaceTableData>> {
     const options = {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -109,21 +111,23 @@ export class DataService {
     return { status: res.status, ok: res.ok, data: json };
   }
 
-  async getAllPlaces(): Promise<ApiResponse<Place[]>> {
+  async getAllPlaces(): Promise<ApiResponse<PlaceTableData[]>> {
     const res = await fetch(`${this.url}/places`);
     const json = (await res.json()) ?? [];
-    this.busRouteList = [...json];
     return { status: res.status, ok: res.ok, data: json };
   }
 
-  async deletePlaceById(id: string): Promise<ApiResponse<Place>> {
+  async deletePlaceById(id: Place['_id']): Promise<ApiResponse<Place>> {
     const options = { method: 'DELETE' };
     const res = await fetch(`${this.url}/places/${id}`, options);
     const json = (await res.json()) ?? {};
     return { status: res.status, ok: res.ok, data: json };
   }
 
-  async updatePlaceById(id: string, data: Place): Promise<ApiResponse<Place>> {
+  async updatePlaceById(
+    id: Place['_id'],
+    data: Place
+  ): Promise<ApiResponse<PlaceTableData>> {
     const options = {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
@@ -131,6 +135,14 @@ export class DataService {
     };
     const res = await fetch(`${this.url}/places/${id}`, options);
     const json = (await res.json()) ?? {};
+    return { status: res.status, ok: res.ok, data: json };
+  }
+
+  async getPlacesByCityId(
+    id: City['_id']
+  ): Promise<ApiResponse<PlaceTableData[]>> {
+    const res = await fetch(`${this.url}/cities/${id}/places`);
+    const json = (await res.json()) ?? [];
     return { status: res.status, ok: res.ok, data: json };
   }
 }
