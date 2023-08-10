@@ -266,11 +266,23 @@ export class BusRouteComponent {
   // on city change when route is selected for editing
   editOnClick(busRouteId: string) {
     const busRouteData = this.routeList.find(route => route._id === busRouteId);
+    const cityId = this.route.snapshot.queryParamMap.get('cityId');
+
     if (!busRouteData) return;
+
     const busRouteCity = this.cityList.find(
       city => city._id === busRouteData.cityId
     );
+
     if (!busRouteCity) return;
+
+    if (cityId !== busRouteCity._id) {
+      this.router.navigate([], {
+        relativeTo: this.route,
+        queryParams: { cityId: busRouteCity._id },
+      });
+    }
+
     this.isEditMode = true;
     this.selectedCity = busRouteCity;
     this.busRouteForm.setValue({
