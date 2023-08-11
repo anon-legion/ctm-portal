@@ -8,6 +8,7 @@ import {
   Validators,
 } from '@angular/forms';
 import { HttpStatusCode as StatusCode } from '@angular/common/http';
+import { Subscription } from 'rxjs';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatInputModule } from '@angular/material/input';
@@ -21,7 +22,6 @@ import { MatTableModule } from '@angular/material/table';
 import { DataService } from '../data.service';
 import { Place, City, PlaceTableData } from '../types';
 import { toTitleCase } from '../shared/utils';
-import { Subscription } from 'rxjs';
 import TableDataSource from '../shared/table-data-source';
 
 function getAllPlaces(service: DataService, placeList: TableDataSource) {
