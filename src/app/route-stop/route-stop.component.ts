@@ -7,6 +7,7 @@ import {
   FormGroup,
   Validators,
 } from '@angular/forms';
+import { HttpStatusCode as StatusCode } from '@angular/common/http';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatInputModule } from '@angular/material/input';
@@ -15,8 +16,10 @@ import { MatSelectChange, MatSelectModule } from '@angular/material/select';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatTableModule } from '@angular/material/table';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
-import { BusRoute, City, PlaceTableData } from '../types';
+import { MatSnackBarModule, MatSnackBar } from '@angular/material/snack-bar';
+import { BusRoute, City, Place, PlaceTableData } from '../types';
 import { DataService } from '../data.service';
+import { toTitleCase } from '../shared/utils';
 
 @Component({
   selector: 'app-route-stop',
@@ -32,6 +35,7 @@ import { DataService } from '../data.service';
     MatIconModule,
     MatButtonModule,
     MatInputModule,
+    MatSnackBarModule,
   ],
   template: `
     <div
@@ -161,10 +165,12 @@ export class RouteStopComponent {
     isActive: this.isActiveControl,
   });
   isEditMode = false;
+  isNewPlace = false;
 
   constructor(
     private _router: Router,
     private _route: ActivatedRoute,
+    private _snackBar: MatSnackBar,
     public dataService: DataService
   ) {
     this.url = new PathQuerySetter(this._router, this._route);
@@ -259,6 +265,47 @@ export class RouteStopComponent {
 
   routeStopFormOnSubmit() {
     console.log(this.routeStopForm.value);
+    const nameControl = this.routeStopForm.get('name');
+    const distanceControl = this.routeStopForm.get('distance');
+    if (
+      !nameControl ||
+      !distanceControl ||
+      !nameControl.value ||
+      !distanceControl.value
+    )
+      return;
+    if (
+      this.selectedCity === this.allCity ||
+      this.selectedRoute === this.allRoute
+    ) {
+      this._snackBar.open('Select city and route', 'Close', { duration: 3000 });
+      return;
+    }
+
+    const name = nameControl.value as string;
+    const distance = Number(distanceControl.value) as number;
+    const formData = {
+      cityId: this.selectedCity._id,
+      name: toTitleCase(name),
+      aliases: [],
+      isActive: this.isActiveControl.value,
+    } as Place;
+
+    this.dataService.addNewPlace(formData).then(res => {
+      const { status, data } = res;
+      if (status === StatusCode.Conflict) {
+        nameControl.setErrors({ conflict: true });
+        this._snackBar.open('Name already exists', 'Close', { duration: 3000 });
+        return;
+      }
+      if (status === StatusCode.Created) {
+        this._snackBar.open('Success', 'Close', { duration: 3000 });
+        // push new place to routeStopList
+        this.routeStopForm.reset({ isActive: true });
+        return;
+      }
+      this._snackBar.open('Something went wrong', 'Close', { duration: 3000 });
+    });
   }
 
   rowOnClick(row: PlaceTableData) {

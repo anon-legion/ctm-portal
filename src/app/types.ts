@@ -9,7 +9,7 @@ export interface BusRoute extends City {
 }
 
 export interface Place extends BusRoute {
-  aliases: string[];
+  aliases: string[] | [];
 }
 
 export interface PlaceTableData extends Place {

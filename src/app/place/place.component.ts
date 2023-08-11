@@ -115,16 +115,16 @@ export class PlaceComponent implements OnInit, OnDestroy {
   }
 
   placeFormOnSubmit() {
-    if (!this.placeForm.value.name) return;
+    const nameControl = this.placeForm.get('name');
+    if (!nameControl || !nameControl.value) return;
     if (this.selectedCity === this.allCity) {
       this._snackBar.open('Please select a city', 'Close', { duration: 3000 });
       return;
     }
 
-    const control = this.placeForm.get('name');
     const formData = {
       cityId: this.selectedCity._id,
-      name: toTitleCase(this.placeForm.value.name),
+      name: toTitleCase(nameControl.value),
       aliases: this.placeForm.value.aliases,
       isActive: this.placeForm.value.isActive,
     } as Place;
@@ -136,8 +136,8 @@ export class PlaceComponent implements OnInit, OnDestroy {
         .then(res => {
           const { status, data } = res;
           if (status === StatusCode.NotFound) return;
-          if (status === StatusCode.Conflict && control) {
-            control.setErrors({ error: 'duplicate' });
+          if (status === StatusCode.Conflict) {
+            nameControl.setErrors({ error: 'duplicate' });
             this._snackBar.open('Name already exists', 'Close', {
               duration: 3000,
             });
@@ -157,8 +157,8 @@ export class PlaceComponent implements OnInit, OnDestroy {
     // add new place
     this.dataService.addNewPlace(formData).then(res => {
       const { status, data } = res;
-      if (status === StatusCode.Conflict && control) {
-        control.setErrors({ error: 'duplicate' });
+      if (status === StatusCode.Conflict) {
+        nameControl.setErrors({ conflict: true });
         this._snackBar.open('Name already exists', 'Close', {
           duration: 3000,
         });
