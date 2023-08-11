@@ -184,48 +184,49 @@ export class RouteStopComponent {
       this.url.setQueryParams();
     }
 
-    dataService.getAllCities().then(res => {
-      const cityList = res.data as City[];
+    Promise.all([
+      this.dataService.getAllCities(),
+      this.dataService.getAllBusRoutes(),
+    ]).then(([cityRes, busRouteRes]) => {
+      const cityList = cityRes.data as City[];
       const reqCity = cityList.find(city => city._id === cityId);
 
-      dataService.getAllBusRoutes().then(res => {
-        this.allBusRoutes = res.data as BusRoute[];
-        const reqBusRoute = this.allBusRoutes.find(
-          route => route._id === routeId
-        );
-        const busRouteCity = cityList.find(
-          city => city._id === reqBusRoute?.cityId
-        );
+      this.allBusRoutes = busRouteRes.data as BusRoute[];
+      const reqBusRoute = this.allBusRoutes.find(
+        route => route._id === routeId
+      );
+      const busRouteCity = cityList.find(
+        city => city._id === reqBusRoute?.cityId
+      );
 
-        // if all query params are invalid
-        if (!reqBusRoute && !reqCity) {
-          this.url.setQueryParams();
-        }
+      // if all query params are invalid
+      if (!reqBusRoute && !reqCity) {
+        this.url.setQueryParams();
+      }
 
-        if (reqBusRoute && busRouteCity) {
-          this.url.setQueryParams({
-            cityId: busRouteCity._id,
-            routeId: reqBusRoute._id,
-          });
-          this.selectedRoute = reqBusRoute;
-          this.selectedCity = busRouteCity;
-        }
+      if (reqBusRoute && busRouteCity) {
+        this.url.setQueryParams({
+          cityId: busRouteCity._id,
+          routeId: reqBusRoute._id,
+        });
+        this.selectedRoute = reqBusRoute;
+        this.selectedCity = busRouteCity;
+      }
 
-        if (reqCity && !reqBusRoute) {
-          this.url.setQueryParams({
-            cityId: reqCity._id,
-            routeId: this.allRoute._id,
-          });
-          this.selectedCity = reqCity;
-          this.selectedRoute = this.allRoute;
-        }
+      if (reqCity && !reqBusRoute) {
+        this.url.setQueryParams({
+          cityId: reqCity._id,
+          routeId: this.allRoute._id,
+        });
+        this.selectedCity = reqCity;
+        this.selectedRoute = this.allRoute;
+      }
 
-        this.cityRouteList = this.allBusRoutes.filter(busRoute =>
-          this.selectedCity === this.allCity
-            ? true
-            : busRoute.cityId === this.selectedCity._id
-        );
-      });
+      this.cityRouteList = this.allBusRoutes.filter(busRoute =>
+        this.selectedCity === this.allCity
+          ? true
+          : busRoute.cityId === this.selectedCity._id
+      );
     });
   }
 
