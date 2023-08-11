@@ -1,15 +1,32 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { ActivatedRoute, Router } from '@angular/router';
+import {
+  ReactiveFormsModule,
+  FormControl,
+  FormGroup,
+  Validators,
+} from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectChange, MatSelectModule } from '@angular/material/select';
-import { BusRoute, City } from '../types';
+import { MatDividerModule } from '@angular/material/divider';
+import { MatTableModule } from '@angular/material/table';
+import { MatSlideToggleModule } from '@angular/material/slide-toggle';
+import { BusRoute, City, PlaceTableData } from '../types';
 import { DataService } from '../data.service';
-import { ActivatedRoute, Router } from '@angular/router';
 
 @Component({
   selector: 'app-route-stop',
   standalone: true,
-  imports: [CommonModule, MatFormFieldModule, MatSelectModule],
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    MatFormFieldModule,
+    MatSelectModule,
+    MatDividerModule,
+    MatTableModule,
+    MatSlideToggleModule,
+  ],
   template: `
     <div
       class="is-flex is-justify-content-space-between width-breakpoint-768"
@@ -40,6 +57,49 @@ import { ActivatedRoute, Router } from '@angular/router';
         </mat-select>
       </mat-form-field>
     </div>
+
+    <!-- <form
+      class="container is-flex is-flex-direction-column mb-2 width-breakpoint-768"
+      [formGroup]="placeForm">
+      <mat-form-field appearance="outline" color="accent">
+        <mat-label>Place Name</mat-label>
+        <input matInput type="text" formControlName="name" class="is-capitalized" />
+      </mat-form-field>
+      <mat-slide-toggle class="mb-2" color="accent" formControlName="isActive">
+        {{ placeForm.value.isActive ? 'Active' : 'Inactive' }}
+      </mat-slide-toggle>
+      <button
+        type="button"
+        mat-raised-button
+        color="primary"
+        [disabled]="!placeForm.valid"
+        (click)="routeStopFormOnSubmit()">
+        {{ isEditMode ? 'Update' : 'Add' }}
+      </button>
+    </form> -->
+
+    <mat-divider class="width-breakpoint-768"></mat-divider>
+    <div class="list-container mt-2 width-breakpoint-768">
+      <table mat-table [dataSource]="routeStopList">
+        <ng-container matColumnDef="name">
+          <th mat-header-cell *matHeaderCellDef>Place</th>
+          <td mat-cell *matCellDef="let element">{{ element.name }}</td>
+        </ng-container>
+        <ng-container matColumnDef="cityId">
+          <th mat-header-cell *matHeaderCellDef>City</th>
+          <td mat-cell *matCellDef="let element">{{ element.cityId.name }}</td>
+        </ng-container>
+        <ng-container matColumnDef="isActive">
+          <th mat-header-cell *matHeaderCellDef>Active</th>
+          <td mat-cell *matCellDef="let element">{{ element.isActive }}</td>
+        </ng-container>
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr
+          mat-row
+          (click)="rowOnClick(row)"
+          *matRowDef="let row; columns: displayedColumns"></tr>
+      </table>
+    </div>
   `,
   styleUrls: ['./route-stop.component.scss'],
 })
@@ -60,6 +120,10 @@ export class RouteStopComponent {
   allBusRoutes: BusRoute[] = [];
   cityRouteList: BusRoute[] = [];
   url: PathQuerySetter;
+  routeStopList: PlaceTableData[] = [];
+  displayedColumns = ['name', 'cityId', 'isActive'];
+  nameControl = new FormControl('', [Validators.required]);
+  isEditMode = false;
 
   constructor(
     private _router: Router,
@@ -154,6 +218,14 @@ export class RouteStopComponent {
       queryParams: { routeId: busRoute._id },
       queryParamsHandling: 'merge',
     });
+  }
+
+  // routeStopFormOnSubmit() {
+  //   console.log(this.routeStopForm.value);
+  // }
+
+  rowOnClick(row: PlaceTableData) {
+    console.log(row);
   }
 }
 
