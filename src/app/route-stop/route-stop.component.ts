@@ -44,8 +44,6 @@ import { ActivatedRoute, Router } from '@angular/router';
   styleUrls: ['./route-stop.component.scss'],
 })
 export class RouteStopComponent {
-  selectedCity = {} as City;
-  selectedRoute = {} as BusRoute;
   allCity: City = {
     _id: 'all',
     name: 'all places',
@@ -57,50 +55,71 @@ export class RouteStopComponent {
     name: 'all routes',
     isActive: true,
   };
+  selectedCity = this.allCity;
+  selectedRoute = this.allRoute;
   allBusRoutes: BusRoute[] = [];
   cityRouteList: BusRoute[] = [];
+  url: PathQuerySetter;
 
   constructor(
     private _router: Router,
     private _route: ActivatedRoute,
     public dataService: DataService
   ) {
-    dataService.getAllCities();
-    dataService.getAllBusRoutes().then(res => {
-      this.allBusRoutes = res.data as BusRoute[];
-    });
+    this.url = new PathQuerySetter(this._router, this._route);
     const cityId = this._route.snapshot.queryParamMap.get('cityId');
     const routeId = this._route.snapshot.queryParamMap.get('routeId');
 
-    if (!cityId && !routeId) {
-      this._router.navigate([], {
-        relativeTo: this._route,
-        queryParams: { cityId: 'all', routeId: 'all' },
-        queryParamsHandling: 'merge',
-      });
-      this.selectedCity = this.allCity;
-      this.cityRouteList = [...this.allBusRoutes];
-      this.selectedRoute = this.allRoute;
-      return;
+    if (
+      (!cityId && !routeId) ||
+      (cityId === this.allCity._id && routeId === this.allRoute._id)
+    ) {
+      this.url.setQueryParams();
     }
 
-    const reqCity = this.cityList.find(city => city._id === cityId);
-    const reqBusRoute = this.allBusRoutes.find(
-      busRoute => busRoute._id === routeId
-    );
+    dataService.getAllCities().then(res => {
+      const cityList = res.data as City[];
+      const reqCity = cityList.find(city => city._id === cityId);
 
-    if (cityId && reqCity) {
-      this.selectedCity = reqCity;
-      this._router.navigate([], {
-        relativeTo: this._route,
-        queryParams: { cityId: reqCity._id },
-        queryParamsHandling: 'merge',
+      dataService.getAllBusRoutes().then(res => {
+        this.allBusRoutes = res.data as BusRoute[];
+        const reqBusRoute = this.allBusRoutes.find(
+          route => route._id === routeId
+        );
+        const busRouteCity = cityList.find(
+          city => city._id === reqBusRoute?.cityId
+        );
+
+        // if all query params are invalid
+        if (!reqBusRoute && !reqCity) {
+          this.url.setQueryParams();
+        }
+
+        if (reqBusRoute && busRouteCity) {
+          this.url.setQueryParams({
+            cityId: busRouteCity._id,
+            routeId: reqBusRoute._id,
+          });
+          this.selectedRoute = reqBusRoute;
+          this.selectedCity = busRouteCity;
+        }
+
+        if (reqCity && !reqBusRoute) {
+          this.url.setQueryParams({
+            cityId: reqCity._id,
+            routeId: this.allRoute._id,
+          });
+          this.selectedCity = reqCity;
+          this.selectedRoute = this.allRoute;
+        }
+
+        this.cityRouteList = this.allBusRoutes.filter(busRoute =>
+          this.selectedCity === this.allCity
+            ? true
+            : busRoute.cityId === this.selectedCity._id
+        );
       });
-    }
-
-    // if routeId only, find cityId
-
-    // if both, find cityId and routeId
+    });
   }
 
   get cityList() {
@@ -110,11 +129,7 @@ export class RouteStopComponent {
   selectCityOnChange(e: MatSelectChange) {
     const city = e.value as City;
 
-    this._router.navigate([], {
-      relativeTo: this._route,
-      queryParams: { cityId: city._id },
-      queryParamsHandling: 'merge',
-    });
+    this.url.setQueryParams({ cityId: city._id });
 
     if (city === this.allCity) {
       this.cityRouteList = [...this.allBusRoutes];
@@ -124,6 +139,11 @@ export class RouteStopComponent {
     this.cityRouteList = this.allBusRoutes.filter(
       busRoute => busRoute.cityId === city._id
     );
+
+    if (this.selectedRoute.cityId !== city._id) {
+      this.url.setQueryParams({ cityId: city._id, routeId: this.allRoute._id });
+      this.selectedRoute = this.allRoute;
+    }
   }
 
   selectRouteOnChange(e: MatSelectChange) {
@@ -132,6 +152,23 @@ export class RouteStopComponent {
     this._router.navigate([], {
       relativeTo: this._route,
       queryParams: { routeId: busRoute._id },
+      queryParamsHandling: 'merge',
+    });
+  }
+}
+
+class PathQuerySetter {
+  constructor(
+    private _router: Router,
+    private _route: ActivatedRoute
+  ) {}
+
+  setQueryParams(
+    queryParams: Record<string, string> = { cityId: 'all', routeId: 'all' }
+  ) {
+    this._router.navigate([], {
+      relativeTo: this._route,
+      queryParams,
       queryParamsHandling: 'merge',
     });
   }
