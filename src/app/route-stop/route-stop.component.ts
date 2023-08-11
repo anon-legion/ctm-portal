@@ -7,6 +7,9 @@ import {
   FormGroup,
   Validators,
 } from '@angular/forms';
+import { MatIconModule } from '@angular/material/icon';
+import { MatButtonModule } from '@angular/material/button';
+import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectChange, MatSelectModule } from '@angular/material/select';
 import { MatDividerModule } from '@angular/material/divider';
@@ -26,6 +29,9 @@ import { DataService } from '../data.service';
     MatDividerModule,
     MatTableModule,
     MatSlideToggleModule,
+    MatIconModule,
+    MatButtonModule,
+    MatInputModule,
   ],
   template: `
     <div
@@ -58,25 +64,43 @@ import { DataService } from '../data.service';
       </mat-form-field>
     </div>
 
-    <!-- <form
+    <form
       class="container is-flex is-flex-direction-column mb-2 width-breakpoint-768"
-      [formGroup]="placeForm">
+      [formGroup]="routeStopForm">
       <mat-form-field appearance="outline" color="accent">
         <mat-label>Place Name</mat-label>
-        <input matInput type="text" formControlName="name" class="is-capitalized" />
+        <input
+          matInput
+          type="text"
+          formControlName="name"
+          class="is-capitalized" />
       </mat-form-field>
-      <mat-slide-toggle class="mb-2" color="accent" formControlName="isActive">
-        {{ placeForm.value.isActive ? 'Active' : 'Inactive' }}
-      </mat-slide-toggle>
+      <div
+        class="is-flex is-justify-content-space-between is-align-items-center">
+        <mat-slide-toggle
+          class="mb-2"
+          color="accent"
+          formControlName="isActive">
+          {{ routeStopForm.value.isActive ? 'Active' : 'Inactive' }}
+        </mat-slide-toggle>
+        <mat-form-field appearance="outline" color="accent">
+          <mat-label>Distance</mat-label>
+          <input
+            matInput
+            type="text"
+            formControlName="distance"
+            pattern="^[0-9]*$" />
+        </mat-form-field>
+      </div>
       <button
         type="button"
         mat-raised-button
         color="primary"
-        [disabled]="!placeForm.valid"
+        [disabled]="!routeStopForm.valid"
         (click)="routeStopFormOnSubmit()">
         {{ isEditMode ? 'Update' : 'Add' }}
       </button>
-    </form> -->
+    </form>
 
     <mat-divider class="width-breakpoint-768"></mat-divider>
     <div class="list-container mt-2 width-breakpoint-768">
@@ -122,7 +146,20 @@ export class RouteStopComponent {
   url: PathQuerySetter;
   routeStopList: PlaceTableData[] = [];
   displayedColumns = ['name', 'cityId', 'isActive'];
-  nameControl = new FormControl('', [Validators.required]);
+  nameControl = new FormControl('', [
+    Validators.required,
+    Validators.minLength(3),
+  ]);
+  distanceControl = new FormControl(null, [
+    Validators.required,
+    Validators.min(0),
+  ]);
+  isActiveControl = new FormControl(true, [Validators.required]);
+  routeStopForm = new FormGroup({
+    name: this.nameControl,
+    distance: this.distanceControl,
+    isActive: this.isActiveControl,
+  });
   isEditMode = false;
 
   constructor(
@@ -220,9 +257,9 @@ export class RouteStopComponent {
     });
   }
 
-  // routeStopFormOnSubmit() {
-  //   console.log(this.routeStopForm.value);
-  // }
+  routeStopFormOnSubmit() {
+    console.log(this.routeStopForm.value);
+  }
 
   rowOnClick(row: PlaceTableData) {
     console.log(row);
