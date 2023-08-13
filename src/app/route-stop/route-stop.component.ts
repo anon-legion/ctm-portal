@@ -8,7 +8,8 @@ import {
   Validators,
 } from '@angular/forms';
 import { HttpStatusCode as StatusCode } from '@angular/common/http';
-import { Subscription } from 'rxjs';
+import { Observable, Subscription } from 'rxjs';
+import { startWith, map } from 'rxjs/operators';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatInputModule } from '@angular/material/input';
@@ -21,6 +22,7 @@ import { MatSnackBarModule, MatSnackBar } from '@angular/material/snack-bar';
 import { BusRoute, City, Place, PlaceTableData } from '../types';
 import { DataService } from '../data.service';
 import { toTitleCase } from '../shared/utils';
+import { MatAutocompleteModule } from '@angular/material/autocomplete';
 
 @Component({
   selector: 'app-route-stop',
@@ -37,6 +39,7 @@ import { toTitleCase } from '../shared/utils';
     MatButtonModule,
     MatInputModule,
     MatSnackBarModule,
+    MatAutocompleteModule,
   ],
   templateUrl: './route-stop.component.html',
   styleUrls: ['./route-stop.component.scss'],
@@ -58,14 +61,16 @@ export class RouteStopComponent implements OnInit, OnDestroy {
   selectedRoute = this.allRoute;
   allBusRoutes: BusRoute[] = [];
   cityRouteList: BusRoute[] = [];
-  url: PathQuerySetter;
   routeStopList: PlaceTableData[] = [];
+  placeOptions: PlaceTableData[] = [];
+  filteredPlaceOptions: Observable<PlaceTableData[]> = new Observable();
+  url: PathQuerySetter;
   displayedColumns = ['name', 'cityId', 'isActive'];
-  nameControl = new FormControl('', [
+  nameControl = new FormControl<string | PlaceTableData>('', [
     Validators.required,
     Validators.minLength(3),
   ]);
-  distanceControl = new FormControl(null, [
+  distanceControl = new FormControl<number | null>(null, [
     Validators.required,
     Validators.min(0),
   ]);
@@ -229,13 +234,33 @@ export class RouteStopComponent implements OnInit, OnDestroy {
     console.log(row);
   }
 
+  displayFn(place: PlaceTableData): string {
+    return place && place.name ? place.name : '';
+  }
+
+  private _filter(name: string): PlaceTableData[] {
+    const filterValue = name.toLowerCase();
+
+    return this.placeOptions.filter(place =>
+      place.name.toLowerCase().includes(filterValue)
+    );
+  }
+
   ngOnInit() {
     this._sub = this._route.queryParamMap.subscribe(params => {
       const cityId = params.get('cityId');
-      const routeId = params.get('routeId');
+      // const routeId = params.get('routeId');
 
-      if (!cityId && !routeId) {
-        console.log('no query params');
+      if (cityId === this.allCity._id) {
+        this.dataService.getAllPlaces().then(res => {
+          const { status, data } = res;
+          if (status !== StatusCode.Ok || !data.length) {
+            this.placeOptions = [];
+            return;
+          }
+          this.placeOptions = data;
+          console.log(this.placeOptions);
+        });
         return;
       }
 
@@ -243,6 +268,14 @@ export class RouteStopComponent implements OnInit, OnDestroy {
 
       // fetch route stops based on routeId
     });
+
+    this.filteredPlaceOptions = this.nameControl.valueChanges.pipe(
+      startWith(''),
+      map(val => {
+        const name = typeof val === 'string' ? val : val?.name;
+        return name ? this._filter(name as string) : this.placeOptions.slice();
+      })
+    );
   }
 
   ngOnDestroy() {

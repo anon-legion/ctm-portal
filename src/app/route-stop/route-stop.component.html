@@ -30,7 +30,19 @@
   [formGroup]="routeStopForm">
   <mat-form-field appearance="outline" color="accent">
     <mat-label>Place Name</mat-label>
-    <input matInput type="text" formControlName="name" class="is-capitalized" />
+    <input
+      matInput
+      type="text"
+      formControlName="name"
+      [matAutocomplete]="auto"
+      class="is-capitalized" />
+    <mat-autocomplete #auto="matAutocomplete" [displayWith]="displayFn">
+      <mat-option
+        *ngFor="let place of filteredPlaceOptions | async"
+        [value]="place">
+        {{ place.name }}
+      </mat-option>
+    </mat-autocomplete>
   </mat-form-field>
   <div class="is-flex is-justify-content-space-between is-align-items-center">
     <mat-slide-toggle class="mb-2" color="accent" formControlName="isActive">
