@@ -24,7 +24,10 @@ import { Place, City, PlaceTableData } from '../types';
 import { toTitleCase } from '../shared/utils';
 import TableDataSource from '../shared/table-data-source';
 
-function getAllPlaces(service: DataService, placeList: TableDataSource) {
+function getAllPlaces(
+  service: DataService,
+  placeList: TableDataSource<PlaceTableData>
+) {
   service.getAllPlaces().then(res => {
     if (res.status !== StatusCode.Ok || !res.data.length) {
       placeList.setData([]);
@@ -68,7 +71,7 @@ export class PlaceComponent implements OnInit, OnDestroy {
     aliases: this.aliasControl,
     isActive: this.isActiveControl,
   });
-  placeList = new TableDataSource([]);
+  placeList = new TableDataSource<PlaceTableData>([]);
   selectedPlace: Place['_id'] = '';
   selectedCity = {} as City;
   isEditMode = false;

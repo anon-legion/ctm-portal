@@ -1,7 +1,13 @@
-import { City, BusRoute, Place, PlaceTableData } from '../types';
+import {
+  City,
+  BusRoute,
+  Place,
+  PlaceTableData,
+  RouteStopTableData,
+} from '../types';
 
 export function sortObjArrByProp<
-  T extends City | BusRoute | Place | PlaceTableData,
+  T extends City | BusRoute | Place | PlaceTableData | RouteStopTableData,
 >(arr: Array<T>, prop: keyof T) {
   const ascending = arr.sort((a, b) => {
     if (a[prop] < b[prop]) return -1;

@@ -1,17 +1,19 @@
 import { DataSource } from '@angular/cdk/collections';
 import { Observable, BehaviorSubject } from 'rxjs';
 import { sortObjArrByProp } from './utils';
-import { PlaceTableData } from '../types';
+import { PlaceTableData, RouteStopTableData } from '../types';
 
-class TableDataSource extends DataSource<PlaceTableData> {
-  private _dataStream = new BehaviorSubject<PlaceTableData[]>([]);
+class TableDataSource<
+  T extends PlaceTableData | RouteStopTableData,
+> extends DataSource<T> {
+  private _dataStream = new BehaviorSubject<T[]>([]);
 
-  constructor(initialData: PlaceTableData[]) {
+  constructor(initialData: T[]) {
     super();
     this.setData(initialData);
   }
 
-  connect(): Observable<PlaceTableData[]> {
+  connect(): Observable<T[]> {
     return this._dataStream;
   }
 
@@ -19,31 +21,31 @@ class TableDataSource extends DataSource<PlaceTableData> {
     this._dataStream.complete();
   }
 
-  setData(data: PlaceTableData[]) {
-    const sortedData = sortObjArrByProp<PlaceTableData>(data, 'name');
+  setData(data: T[]) {
+    const sortedData = sortObjArrByProp<T>(data, 'name' as keyof T);
     this._dataStream.next(sortedData);
   }
 
-  push(data: PlaceTableData) {
-    const sortedData = sortObjArrByProp<PlaceTableData>(
+  push(data: T) {
+    const sortedData = sortObjArrByProp<T>(
       [...this._dataStream.getValue(), data],
-      'name'
+      'name' as keyof T
     );
     this._dataStream.next(sortedData);
   }
 
-  findById(id: PlaceTableData['_id']) {
+  findById(id: T['_id']) {
     return this._dataStream.getValue().find(place => place._id === id);
   }
 
-  removeById(id: PlaceTableData['_id']) {
+  removeById(id: T['_id']) {
     const filteredData = this._dataStream
       .getValue()
       .filter(place => place._id !== id);
     this._dataStream.next(filteredData);
   }
 
-  updateById(id: PlaceTableData['_id'], data: PlaceTableData) {
+  updateById(id: T['_id'], data: T) {
     const updatedData = this._dataStream
       .getValue()
       .map(place => (place._id === id ? data : place));

@@ -1,5 +1,13 @@
 import { Injectable } from '@angular/core';
-import { City, BusRoute, Place, PlaceTableData, ApiResponse } from './types';
+import {
+  City,
+  BusRoute,
+  Place,
+  PlaceTableData,
+  RouteStop,
+  RouteStopTableData,
+  ApiResponse,
+} from './types';
 
 @Injectable({
   providedIn: 'root',
@@ -142,6 +150,14 @@ export class DataService {
     id: City['_id']
   ): Promise<ApiResponse<PlaceTableData[]>> {
     const res = await fetch(`${this.url}/cities/${id}/places`);
+    const json = (await res.json()) ?? [];
+    return { status: res.status, ok: res.ok, data: json };
+  }
+
+  async getRouteStopsByRouteId(
+    id: BusRoute['_id']
+  ): Promise<ApiResponse<RouteStop[]>> {
+    const res = await fetch(`${this.url}/route-stops/${id}`);
     const json = (await res.json()) ?? [];
     return { status: res.status, ok: res.ok, data: json };
   }

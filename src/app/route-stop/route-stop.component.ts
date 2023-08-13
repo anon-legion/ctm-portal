@@ -19,7 +19,13 @@ import { MatDividerModule } from '@angular/material/divider';
 import { MatTableModule } from '@angular/material/table';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatSnackBarModule, MatSnackBar } from '@angular/material/snack-bar';
-import { BusRoute, City, Place, PlaceTableData } from '../types';
+import {
+  BusRoute,
+  City,
+  Place,
+  PlaceTableData,
+  RouteStopTableData,
+} from '../types';
 import { DataService } from '../data.service';
 import { toTitleCase } from '../shared/utils';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
@@ -61,7 +67,7 @@ export class RouteStopComponent implements OnInit, OnDestroy {
   selectedRoute = this.allRoute;
   allBusRoutes: BusRoute[] = [];
   cityRouteList: BusRoute[] = [];
-  routeStopList: PlaceTableData[] = [];
+  routeStopList: RouteStopTableData[] = [];
   placeOptions: PlaceTableData[] = [];
   filteredPlaceOptions: Observable<PlaceTableData[]> = new Observable();
   url: PathQuerySetter;
@@ -246,27 +252,51 @@ export class RouteStopComponent implements OnInit, OnDestroy {
     );
   }
 
+  private _lastCityId = '';
+  // private _lastRouteId = ''
+
   ngOnInit() {
     this._sub = this._route.queryParamMap.subscribe(params => {
       const cityId = params.get('cityId');
       // const routeId = params.get('routeId');
 
-      if (cityId === this.allCity._id) {
+      if (cityId === this.allCity._id && cityId !== this._lastCityId) {
         this.dataService.getAllPlaces().then(res => {
+          const { status, data } = res;
+          this._lastCityId = cityId;
+
+          if (status !== StatusCode.Ok || !data.length) {
+            this.placeOptions = [];
+          } else {
+            this.placeOptions = data;
+            console.log(this.placeOptions);
+          }
+        });
+      }
+
+      if (
+        cityId &&
+        cityId !== this.allCity._id &&
+        cityId !== this._lastCityId
+      ) {
+        this.dataService.getPlacesByCityId(cityId).then(res => {
           const { status, data } = res;
           if (status !== StatusCode.Ok || !data.length) {
             this.placeOptions = [];
-            return;
+          } else {
+            this.placeOptions = data;
           }
-          this.placeOptions = data;
-          console.log(this.placeOptions);
         });
-        return;
       }
 
-      // fetch places based on cityId
-
-      // fetch route stops based on routeId
+      // if (routeId && routeId !== this.allRoute._id && routeId !== this._lastRouteId) {
+      //   this.dataService.getRouteStopsByRouteId(routeId).then(res => {
+      //     const { status, data } = res;
+      //     if (status !== StatusCode.Ok || !data.length) {
+      //       this.placeOptions = [];
+      //     } else {this.placeOptions = data}
+      //   })
+      // }
     });
 
     this.filteredPlaceOptions = this.nameControl.valueChanges.pipe(
