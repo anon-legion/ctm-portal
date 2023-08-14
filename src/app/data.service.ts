@@ -156,8 +156,14 @@ export class DataService {
 
   async getRouteStopsByRouteId(
     id: BusRoute['_id']
-  ): Promise<ApiResponse<RouteStop[]>> {
-    const res = await fetch(`${this.url}/route-stops/${id}`);
+  ): Promise<ApiResponse<RouteStopTableData[]>> {
+    const res = await fetch(`${this.url}/bus-routes/${id}/stops`);
+    const json = (await res.json()) ?? [];
+    return { status: res.status, ok: res.ok, data: json };
+  }
+
+  async getAllRouteStops(): Promise<ApiResponse<RouteStopTableData[]>> {
+    const res = await fetch(`${this.url}/route-stops`);
     const json = (await res.json()) ?? [];
     return { status: res.status, ok: res.ok, data: json };
   }

@@ -29,6 +29,7 @@ import {
 import { DataService } from '../data.service';
 import { toTitleCase } from '../shared/utils';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
+import TableDataSource from '../shared/table-data-source';
 
 @Component({
   selector: 'app-route-stop',
@@ -67,7 +68,7 @@ export class RouteStopComponent implements OnInit, OnDestroy {
   selectedRoute = this.allRoute;
   allBusRoutes: BusRoute[] = [];
   cityRouteList: BusRoute[] = [];
-  routeStopList: RouteStopTableData[] = [];
+  routeStopList = new TableDataSource<RouteStopTableData>([]);
   placeOptions: PlaceTableData[] = [];
   filteredPlaceOptions: Observable<PlaceTableData[]> = new Observable();
   url: PathQuerySetter;
@@ -253,12 +254,14 @@ export class RouteStopComponent implements OnInit, OnDestroy {
   }
 
   private _lastCityId = '';
-  // private _lastRouteId = ''
+  private _lastRouteId = '';
 
   ngOnInit() {
     this._sub = this._route.queryParamMap.subscribe(params => {
       const cityId = params.get('cityId');
-      // const routeId = params.get('routeId');
+      const routeId = params.get('routeId');
+      console.log(`cityId: ${cityId}`);
+      console.log(`routeId: ${routeId}`);
 
       if (cityId === this.allCity._id && cityId !== this._lastCityId) {
         this.dataService.getAllPlaces().then(res => {
@@ -269,7 +272,6 @@ export class RouteStopComponent implements OnInit, OnDestroy {
             this.placeOptions = [];
           } else {
             this.placeOptions = data;
-            console.log(this.placeOptions);
           }
         });
       }
@@ -289,14 +291,31 @@ export class RouteStopComponent implements OnInit, OnDestroy {
         });
       }
 
-      // if (routeId && routeId !== this.allRoute._id && routeId !== this._lastRouteId) {
-      //   this.dataService.getRouteStopsByRouteId(routeId).then(res => {
-      //     const { status, data } = res;
-      //     if (status !== StatusCode.Ok || !data.length) {
-      //       this.placeOptions = [];
-      //     } else {this.placeOptions = data}
-      //   })
-      // }
+      if (
+        routeId &&
+        routeId !== this.allRoute._id &&
+        routeId !== this._lastRouteId
+      ) {
+        this.dataService.getRouteStopsByRouteId(routeId).then(res => {
+          const { status, data } = res;
+          if (status !== StatusCode.Ok || !data.length) {
+            this.routeStopList.setData([]);
+          } else {
+            this.routeStopList.setData(data);
+          }
+        });
+      }
+
+      if (routeId === this.allRoute._id && routeId !== this._lastRouteId) {
+        this.dataService.getAllRouteStops().then(res => {
+          const { status, data } = res;
+          if (status !== StatusCode.Ok || !data.length) {
+            this.routeStopList.setData([]);
+          } else {
+            this.routeStopList.setData(data);
+          }
+        });
+      }
     });
 
     this.filteredPlaceOptions = this.nameControl.valueChanges.pipe(

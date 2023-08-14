@@ -19,13 +19,13 @@ export interface PlaceTableData extends Place {
 export interface RouteStop {
   _id: string;
   routeId: BusRoute['_id'];
-  placeId: Place['_id'] | Place;
+  placeId: Place['_id'] | PlaceTableData;
   distance: number;
   isActive: boolean;
 }
 
 export interface RouteStopTableData extends RouteStop {
-  placeId: Place;
+  placeId: PlaceTableData;
 }
 
 export type ApiResponse<T> = {
