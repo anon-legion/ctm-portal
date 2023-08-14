@@ -22,9 +22,10 @@ import { MatSnackBarModule, MatSnackBar } from '@angular/material/snack-bar';
 import {
   BusRoute,
   City,
-  Place,
   PlaceTableData,
   RouteStopTableData,
+  RouteStop,
+  Place,
 } from '../types';
 import { DataService } from '../data.service';
 import { toTitleCase } from '../shared/utils';
@@ -52,7 +53,16 @@ import TableDataSource from '../shared/table-data-source';
   styleUrls: ['./route-stop.component.scss'],
 })
 export class RouteStopComponent implements OnInit, OnDestroy {
+  private _filter(name: string): PlaceTableData[] {
+    const filterValue = name.toLowerCase();
+
+    return this.placeOptions.filter(place =>
+      place.name.toLowerCase().includes(filterValue)
+    );
+  }
   private _sub: Subscription = new Subscription();
+  private _lastCityId = '';
+  private _lastRouteId = '';
   allCity: City = {
     _id: 'all',
     name: 'all places',
@@ -88,7 +98,6 @@ export class RouteStopComponent implements OnInit, OnDestroy {
     isActive: this.isActiveControl,
   });
   isEditMode = false;
-  isNewPlace = false;
 
   constructor(
     private _router: Router,
@@ -194,6 +203,7 @@ export class RouteStopComponent implements OnInit, OnDestroy {
     console.log(this.routeStopForm.value);
     const nameControl = this.routeStopForm.get('name');
     const distanceControl = this.routeStopForm.get('distance');
+
     if (
       !nameControl ||
       !distanceControl ||
@@ -201,6 +211,7 @@ export class RouteStopComponent implements OnInit, OnDestroy {
       !distanceControl.value
     )
       return;
+
     if (
       this.selectedCity === this.allCity ||
       this.selectedRoute === this.allRoute
@@ -209,32 +220,67 @@ export class RouteStopComponent implements OnInit, OnDestroy {
       return;
     }
 
-    const name = nameControl.value as string;
+    const name = nameControl.value;
     const distance = Number(distanceControl.value) as number;
-    const formData = {
-      cityId: this.selectedCity._id,
-      name: toTitleCase(name),
-      aliases: [],
-      isActive: this.isActiveControl.value,
-    } as Place;
 
-    this.dataService.addNewPlace(formData).then(res => {
-      const { status, data } = res;
-      if (status === StatusCode.Conflict) {
-        nameControl.setErrors({ conflict: true });
-        this._snackBar.open('Name already exists', 'Close', { duration: 3000 });
-        return;
-      }
-      if (status !== StatusCode.Created) {
-        this._snackBar.open('Something went wrong', 'Close', {
-          duration: 3000,
-        });
-        return;
-      }
-      this._snackBar.open('Success', 'Close', { duration: 3000 });
-      // use response data to add place to route stop
-      this.routeStopForm.reset({ isActive: true });
-    });
+    if (typeof name === 'string') {
+      const formData = {
+        cityId: this.selectedCity._id,
+        name: toTitleCase(name),
+        isActive: this.isActiveControl.value,
+      };
+      this.dataService.addNewPlace(formData as Place).then(placeRes => {
+        const { status, data } = placeRes;
+        if (status === StatusCode.Conflict) {
+          nameControl.setErrors({ conflict: true });
+          this._snackBar.open('Name already exists', 'Close', {
+            duration: 3000,
+          });
+          return;
+        }
+        if (status !== StatusCode.Created) {
+          this._snackBar.open('Something went wrong', 'Close', {
+            duration: 3000,
+          });
+          return;
+        }
+        this.dataService
+          .addNewRouteStop({
+            routeId: this.selectedRoute._id,
+            placeId: data._id,
+            distance,
+            isActive: this.isActiveControl.value,
+          } as RouteStop)
+          .then(routeStopRes => {
+            const { status, data } = routeStopRes;
+            if (status === StatusCode.Created) {
+              this._snackBar.open('Success', 'Close', { duration: 3000 });
+              this.routeStopList.push(data);
+              this.routeStopForm.reset({ isActive: true });
+              return;
+            }
+          });
+      });
+    }
+
+    if (typeof name === 'object') {
+      const place = name as PlaceTableData;
+      const formData = {
+        routeId: this.selectedRoute._id,
+        placeId: place._id,
+        distance,
+        isActive: this.isActiveControl.value,
+      };
+      this.dataService.addNewRouteStop(formData as RouteStop).then(res => {
+        const { status, data } = res;
+        if (status === StatusCode.Created) {
+          this._snackBar.open('Success', 'Close', { duration: 3000 });
+          this.routeStopList.push(data);
+          this.routeStopForm.reset({ isActive: true });
+          return;
+        }
+      });
+    }
   }
 
   rowOnClick(row: PlaceTableData) {
@@ -244,17 +290,6 @@ export class RouteStopComponent implements OnInit, OnDestroy {
   displayFn(place: PlaceTableData): string {
     return place && place.name ? place.name : '';
   }
-
-  private _filter(name: string): PlaceTableData[] {
-    const filterValue = name.toLowerCase();
-
-    return this.placeOptions.filter(place =>
-      place.name.toLowerCase().includes(filterValue)
-    );
-  }
-
-  private _lastCityId = '';
-  private _lastRouteId = '';
 
   ngOnInit() {
     this._sub = this._route.queryParamMap.subscribe(params => {
@@ -291,12 +326,8 @@ export class RouteStopComponent implements OnInit, OnDestroy {
         });
       }
 
-      if (
-        routeId &&
-        routeId !== this.allRoute._id &&
-        routeId !== this._lastRouteId
-      ) {
-        this.dataService.getRouteStopsByRouteId(routeId).then(res => {
+      if (routeId === this.allRoute._id && routeId !== this._lastRouteId) {
+        this.dataService.getAllRouteStops().then(res => {
           const { status, data } = res;
           if (status !== StatusCode.Ok || !data.length) {
             this.routeStopList.setData([]);
@@ -306,8 +337,12 @@ export class RouteStopComponent implements OnInit, OnDestroy {
         });
       }
 
-      if (routeId === this.allRoute._id && routeId !== this._lastRouteId) {
-        this.dataService.getAllRouteStops().then(res => {
+      if (
+        routeId &&
+        routeId !== this.allRoute._id &&
+        routeId !== this._lastRouteId
+      ) {
+        this.dataService.getRouteStopsByRouteId(routeId).then(res => {
           const { status, data } = res;
           if (status !== StatusCode.Ok || !data.length) {
             this.routeStopList.setData([]);

@@ -167,4 +167,17 @@ export class DataService {
     const json = (await res.json()) ?? [];
     return { status: res.status, ok: res.ok, data: json };
   }
+
+  async addNewRouteStop(
+    data: RouteStop
+  ): Promise<ApiResponse<RouteStopTableData>> {
+    const options = {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    };
+    const res = await fetch(`${this.url}/route-stops`, options);
+    const json = (await res.json()) ?? {};
+    return { status: res.status, ok: res.ok, data: json };
+  }
 }
