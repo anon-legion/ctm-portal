@@ -194,4 +194,13 @@ export class DataService {
     const json = (await res.json()) ?? {};
     return { status: res.status, ok: res.ok, data: json };
   }
+
+  async deleteRouteStopById(
+    id: RouteStop['_id']
+  ): Promise<ApiResponse<RouteStopTableData>> {
+    const options = { method: 'DELETE' };
+    const res = await fetch(`${this.url}/route-stops/${id}`, options);
+    const json = (await res.json()) ?? {};
+    return { status: res.status, ok: res.ok, data: json };
+  }
 }

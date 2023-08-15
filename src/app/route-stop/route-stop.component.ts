@@ -197,7 +197,6 @@ export class RouteStopComponent implements OnInit, OnDestroy {
   }
 
   routeStopFormOnSubmit() {
-    console.log(this.routeStopForm.value);
     const nameControl = this.routeStopForm.get('name');
     const distanceControl = this.routeStopForm.get('distance');
 
@@ -348,6 +347,25 @@ export class RouteStopComponent implements OnInit, OnDestroy {
       isActive: row.isActive,
     });
     nameControl?.disable();
+  }
+
+  deleteOnClick(placeId: RouteStop['_id']) {
+    this.dataService.deleteRouteStopById(placeId).then(res => {
+      const { status } = res;
+      if (status === StatusCode.Ok) {
+        this.routeStopList.removeById(placeId);
+        this._snackBar.open('Deleted', 'Close', {
+          duration: 3000,
+        });
+        this.selectedRouteStop = '';
+        this.isEditMode = false;
+        this.routeStopForm.reset({ isActive: true });
+      }
+    });
+  }
+
+  navigateTo() {
+    this._router.navigate(['places']);
   }
 
   displayFn(place: PlaceTableData): string {

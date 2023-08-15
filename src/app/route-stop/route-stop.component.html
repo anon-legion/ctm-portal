@@ -93,3 +93,21 @@
       *matRowDef="let row; columns: displayedColumns"></tr>
   </table>
 </div>
+
+<div class="is-flex is-justify-content-space-around mt-4 width-breakpoint-768">
+  <button
+    mat-raised-button
+    color="warn"
+    class="uniform-button"
+    [disabled]="!selectedRouteStop"
+    (click)="deleteOnClick(selectedRouteStop)">
+    Delete
+  </button>
+  <button
+    mat-raised-button
+    color="accent"
+    class="uniform-button"
+    (click)="navigateTo()">
+    Places
+  </button>
+</div>
