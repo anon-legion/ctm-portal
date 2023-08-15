@@ -61,7 +61,7 @@ function getAllBusRoutes(service: DataService, routeList: BusRoute[]) {
         <mat-select
           [(value)]="selectedCity"
           (selectionChange)="selectCityOnChange($event)">
-          <mat-option [value]="allCity">All Routes</mat-option>
+          <mat-option [value]="allCity">All Cities</mat-option>
           <mat-option *ngFor="let city of cityList" [value]="city">
             {{ city.name }}
           </mat-option>
