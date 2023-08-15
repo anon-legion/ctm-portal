@@ -1,3 +1,20 @@
+<!-- eslint-disable @angular-eslint/template/interactive-supports-focus -->
+<!-- eslint-disable @angular-eslint/template/click-events-have-key-events -->
 <main class="section is-flex is-flex-direction-column">
-  <router-outlet></router-outlet>
+  <nav
+    mat-tab-nav-bar
+    [tabPanel]="tabPanel"
+    class="width-breakpoint-768"
+    style="margin-bottom: 2rem">
+    <a
+      mat-tab-link
+      *ngFor="let link of links"
+      (click)="anchorOnClick(link)"
+      [active]="currentRoute === link.path">
+      {{ link.label }}
+    </a>
+  </nav>
+  <mat-tab-nav-panel #tabPanel>
+    <router-outlet></router-outlet>
+  </mat-tab-nav-panel>
 </main>
