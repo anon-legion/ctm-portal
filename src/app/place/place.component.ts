@@ -257,7 +257,9 @@ export class PlaceComponent implements OnInit, OnDestroy {
 
     if (cityId !== placeCity?._id) {
       this._router.navigate([], {
+        relativeTo: this._route,
         queryParams: { cityId: placeCity?._id },
+        queryParamsHandling: 'merge',
       });
     }
 

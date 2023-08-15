@@ -76,6 +76,7 @@ export class RouteStopComponent implements OnInit, OnDestroy {
   };
   selectedCity = this.allCity;
   selectedRoute = this.allRoute;
+  selectedRouteStop: RouteStopTableData['_id'] = '';
   allBusRoutes: BusRoute[] = [];
   cityRouteList: BusRoute[] = [];
   routeStopList = new TableDataSource<RouteStopTableData>([]);
@@ -192,11 +193,7 @@ export class RouteStopComponent implements OnInit, OnDestroy {
   selectRouteOnChange(e: MatSelectChange) {
     const busRoute = e.value as BusRoute;
 
-    this._router.navigate([], {
-      relativeTo: this._route,
-      queryParams: { routeId: busRoute._id },
-      queryParamsHandling: 'merge',
-    });
+    this.url.setQueryParams({ routeId: busRoute._id });
   }
 
   routeStopFormOnSubmit() {
@@ -222,6 +219,31 @@ export class RouteStopComponent implements OnInit, OnDestroy {
 
     const name = nameControl.value;
     const distance = Number(distanceControl.value) as number;
+
+    if (this.isEditMode) {
+      const place = name as PlaceTableData;
+      const formData = {
+        routeId: this.selectedRoute._id,
+        placeId: place._id,
+        distance,
+        isActive: this.isActiveControl.value,
+      } as RouteStop;
+      this.dataService
+        .updateRouteStopById(this.selectedRouteStop, formData)
+        .then(res => {
+          const { status, data } = res;
+          if (status === StatusCode.Ok) {
+            this._snackBar.open('Success', 'Close', { duration: 3000 });
+            this.routeStopList.updateById(data._id, data);
+            this.routeStopForm.reset({ isActive: true });
+            this.selectedRouteStop = '';
+            this.isEditMode = false;
+            nameControl.enable();
+            return;
+          }
+        });
+      return;
+    }
 
     if (typeof name === 'string') {
       const formData = {
@@ -283,8 +305,49 @@ export class RouteStopComponent implements OnInit, OnDestroy {
     }
   }
 
-  rowOnClick(row: PlaceTableData) {
+  rowOnClick(row: RouteStopTableData) {
     console.log(row);
+    const rowId = row._id;
+    const rowCityId = row.placeId.cityId._id;
+    const rowRouteId = row.routeId;
+    const reqCity = this.cityList.find(city => city._id === rowCityId);
+    const reqBusRoute = this.allBusRoutes.find(
+      route => route._id === rowRouteId
+    );
+    const nameControl = this.routeStopForm.get('name');
+
+    if (rowId === this.selectedRouteStop) {
+      this.selectedRouteStop = '';
+      this.isEditMode = false;
+      this.routeStopForm.reset({ isActive: true });
+      nameControl?.enable();
+      return;
+    }
+
+    if (reqCity && this.selectedCity !== reqCity) {
+      this.selectedCity = reqCity;
+    }
+
+    if (reqBusRoute && this.selectedRoute !== reqBusRoute) {
+      this.selectedRoute = reqBusRoute;
+    }
+
+    const selectedPlace = this.placeOptions.find(
+      place => place._id === row.placeId._id
+    );
+
+    this.url.setQueryParams({
+      cityId: reqCity?._id ?? this.allCity._id,
+      routeId: reqBusRoute?._id ?? this.allRoute._id,
+    });
+    this.isEditMode = true;
+    this.selectedRouteStop = rowId;
+    this.routeStopForm.setValue({
+      name: selectedPlace ?? null,
+      distance: row.distance,
+      isActive: row.isActive,
+    });
+    nameControl?.disable();
   }
 
   displayFn(place: PlaceTableData): string {
@@ -295,13 +358,12 @@ export class RouteStopComponent implements OnInit, OnDestroy {
     this._sub = this._route.queryParamMap.subscribe(params => {
       const cityId = params.get('cityId');
       const routeId = params.get('routeId');
-      console.log(`cityId: ${cityId}`);
-      console.log(`routeId: ${routeId}`);
 
       if (cityId === this.allCity._id && cityId !== this._lastCityId) {
         this.dataService.getAllPlaces().then(res => {
           const { status, data } = res;
           this._lastCityId = cityId;
+          this.selectedCity = this.allCity;
 
           if (status !== StatusCode.Ok || !data.length) {
             this.placeOptions = [];
@@ -329,6 +391,8 @@ export class RouteStopComponent implements OnInit, OnDestroy {
       if (routeId === this.allRoute._id && routeId !== this._lastRouteId) {
         this.dataService.getAllRouteStops().then(res => {
           const { status, data } = res;
+          this.selectedRoute = this.allRoute;
+
           if (status !== StatusCode.Ok || !data.length) {
             this.routeStopList.setData([]);
           } else {

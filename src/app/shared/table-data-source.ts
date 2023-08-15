@@ -48,7 +48,10 @@ class TableDataSource<
   updateById(id: T['_id'], data: T) {
     const updatedData = this._dataStream
       .getValue()
-      .map(place => (place._id === id ? data : place));
+      .map(el => (el._id === id ? data : el));
+
+    if (!updatedData.some(el => el._id === id)) updatedData.push(data);
+
     this._dataStream.next(updatedData);
   }
 }
