@@ -396,7 +396,12 @@ export class RouteStopComponent implements OnInit, OnDestroy {
           if (status !== StatusCode.Ok || !data.length) {
             this.routeStopList.setData([]);
           } else {
-            this.routeStopList.setData(data);
+            const filteredRouteStops = data.filter(routeStop =>
+              cityId === this.allCity._id
+                ? true
+                : routeStop.placeId.cityId._id === cityId
+            );
+            this.routeStopList.setData(filteredRouteStops);
           }
         });
       }
