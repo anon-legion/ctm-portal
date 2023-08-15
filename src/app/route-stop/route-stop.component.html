@@ -55,8 +55,9 @@
       <input
         matInput
         type="text"
+        [value]="routeStopForm.get('distance')?.value | number: '1.1-1'"
         formControlName="distance"
-        pattern="^[0-9]*$" />
+        pattern="^[0-9]+(\.[0-9]{1,2})?$" />
     </mat-form-field>
   </div>
   <button
@@ -90,6 +91,7 @@
     <tr
       mat-row
       (click)="rowOnClick(row)"
+      [class.selected]="selectedRouteStop === row._id"
       *matRowDef="let row; columns: displayedColumns"></tr>
   </table>
 </div>

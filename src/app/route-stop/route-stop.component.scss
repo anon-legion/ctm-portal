@@ -14,3 +14,11 @@ th {
 .mat-mdc-row:hover .mat-mdc-cell {
   background-color: hsl(0, 0%, 36%);
 }
+
+.selected {
+  background-color: hsl(282, 68%, 38%);
+
+  &:hover .mat-mdc-cell {
+    background-color: hsl(282, 68%, 38%);
+  }
+}
