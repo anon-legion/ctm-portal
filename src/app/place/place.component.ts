@@ -1,28 +1,29 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ActivatedRoute, Router, RouterModule } from '@angular/router';
+import { HttpStatusCode as StatusCode } from '@angular/common/http';
 import {
   ReactiveFormsModule,
   FormControl,
   FormGroup,
   Validators,
 } from '@angular/forms';
-import { HttpStatusCode as StatusCode } from '@angular/common/http';
+import { ActivatedRoute, Router } from '@angular/router';
 import { Subscription } from 'rxjs';
-import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
+import { MatChipInputEvent, MatChipsModule } from '@angular/material/chips';
+import { MatDividerModule } from '@angular/material/divider';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectChange, MatSelectModule } from '@angular/material/select';
-import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
-import { MatDividerModule } from '@angular/material/divider';
 import { MatSnackBarModule, MatSnackBar } from '@angular/material/snack-bar';
-import { MatChipInputEvent, MatChipsModule } from '@angular/material/chips';
 import { MatTableModule } from '@angular/material/table';
 import { DataService } from '../data.service';
-import { Place, City, PlaceTableData } from '../types';
-import { toTitleCase } from '../shared/utils';
+import PathQuerySetter from '../shared/path-query-setter';
 import TableDataSource from '../shared/table-data-source';
+import { toTitleCase } from '../shared/utils';
+import { Place, City, PlaceTableData } from '../types';
 
 function getAllPlaces(
   service: DataService,
@@ -42,17 +43,16 @@ function getAllPlaces(
   standalone: true,
   imports: [
     CommonModule,
-    RouterModule,
     ReactiveFormsModule,
+    MatButtonModule,
+    MatChipsModule,
+    MatDividerModule,
     MatFormFieldModule,
+    MatIconModule,
     MatInputModule,
     MatSelectModule,
-    MatButtonModule,
-    MatIconModule,
     MatSlideToggleModule,
-    MatDividerModule,
     MatSnackBarModule,
-    MatChipsModule,
     MatTableModule,
   ],
   templateUrl: './place.component.html',
@@ -60,6 +60,18 @@ function getAllPlaces(
 })
 export class PlaceComponent implements OnInit, OnDestroy {
   private _sub: Subscription = new Subscription();
+  allCity: City = {
+    _id: 'all',
+    name: 'all places',
+    isActive: true,
+  };
+  selectedCity = this.allCity;
+  selectedPlace: Place['_id'] = '';
+  placeList = new TableDataSource<PlaceTableData>([]);
+  url: PathQuerySetter;
+  displayedColumns = ['name', 'cityId', 'isActive'];
+
+  // form properties
   nameControl = new FormControl('', [
     Validators.required,
     Validators.minLength(3),
@@ -71,16 +83,7 @@ export class PlaceComponent implements OnInit, OnDestroy {
     aliases: this.aliasControl,
     isActive: this.isActiveControl,
   });
-  placeList = new TableDataSource<PlaceTableData>([]);
-  selectedPlace: Place['_id'] = '';
-  selectedCity = {} as City;
   isEditMode = false;
-  allCity: City = {
-    _id: 'all',
-    name: 'all places',
-    isActive: true,
-  };
-  displayedColumns = ['name', 'cityId', 'isActive'];
 
   constructor(
     private _snackBar: MatSnackBar,
@@ -88,24 +91,26 @@ export class PlaceComponent implements OnInit, OnDestroy {
     private _route: ActivatedRoute,
     public dataService: DataService
   ) {
+    this.url = new PathQuerySetter(this._router, this._route, {
+      cityId: 'all',
+    });
     const cityId = this._route.snapshot.queryParamMap.get('cityId');
 
     if (!cityId) {
-      this.selectedCity = this.allCity;
       this.dataService.getAllCities();
+      this.url.setQueryParams();
       return;
     }
 
     this.dataService.getAllCities().then(res => {
       const cityList = res.data as City[];
-      const currentCity = cityList.find(city => city._id === cityId);
+      const currentCity = [...cityList, this.allCity].find(
+        city => city._id === cityId
+      );
 
       // if cityId is not valid, set allCity and get all places
       if (!currentCity) {
-        this.selectedCity = this.allCity;
-        this._router.navigate([], {
-          relativeTo: this._route,
-        });
+        this.url.setQueryParams();
         return;
       }
 
@@ -200,10 +205,7 @@ export class PlaceComponent implements OnInit, OnDestroy {
 
   selectCityOnChange(e: MatSelectChange) {
     if (e.value === this.allCity) {
-      // set path to /place
-      this._router.navigate([], {
-        relativeTo: this._route,
-      });
+      this.url.setQueryParams();
       return;
     }
 
@@ -277,10 +279,11 @@ export class PlaceComponent implements OnInit, OnDestroy {
     // handles updating placeList when cityId changes
     this._sub = this._route.queryParamMap.subscribe(params => {
       const cityId = params.get('cityId') || '';
-      if (!cityId) {
+      if (!cityId || cityId === this.allCity._id) {
         getAllPlaces(this.dataService, this.placeList);
         return;
       }
+
       this.dataService.getPlacesByCityId(cityId).then(res => {
         const { status, data } = res;
         if (status === StatusCode.Ok && data.length) {

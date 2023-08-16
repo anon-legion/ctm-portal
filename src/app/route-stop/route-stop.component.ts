@@ -76,10 +76,10 @@ export class RouteStopComponent implements OnInit, OnDestroy {
   };
   selectedCity = this.allCity;
   selectedRoute = this.allRoute;
-  editRouteStop: RouteStopTableData['_id'] = '';
   allBusRoutes: BusRoute[] = [];
   cityRouteList: BusRoute[] = [];
   routeStopList = new TableDataSource<RouteStopTableData>([]);
+  editRouteStop: RouteStopTableData['_id'] = '';
   placeOptions: PlaceTableData[] = [];
   filteredPlaceOptions: Observable<PlaceTableData[]> = new Observable();
   url: PathQuerySetter;
