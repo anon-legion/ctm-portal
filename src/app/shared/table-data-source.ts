@@ -7,10 +7,24 @@ class TableDataSource<
   T extends PlaceTableData | RouteStopTableData,
 > extends DataSource<T> {
   private _dataStream = new BehaviorSubject<T[]>([]);
+  private _sort(data: Array<T>) {
+    if (!data.length) return [];
+    const dataKeys = Object.keys(data[0]);
+    return sortObjArrByProp<T>(
+      data,
+      dataKeys.includes('distance')
+        ? ('distance' as keyof T)
+        : ('name' as keyof T)
+    );
+  }
 
   constructor(initialData: T[]) {
     super();
     this.setData(initialData);
+  }
+
+  get length() {
+    return this._dataStream.getValue().length;
   }
 
   connect(): Observable<T[]> {
@@ -22,15 +36,12 @@ class TableDataSource<
   }
 
   setData(data: T[]) {
-    const sortedData = sortObjArrByProp<T>(data, 'name' as keyof T);
+    const sortedData = this._sort(data);
     this._dataStream.next(sortedData);
   }
 
   push(data: T) {
-    const sortedData = sortObjArrByProp<T>(
-      [...this._dataStream.getValue(), data],
-      'name' as keyof T
-    );
+    const sortedData = this._sort([...this._dataStream.getValue(), data]);
     this._dataStream.next(sortedData);
   }
 
@@ -52,11 +63,8 @@ class TableDataSource<
 
     if (!updatedData.some(el => el._id === id)) updatedData.push(data);
 
-    this._dataStream.next(updatedData);
-  }
-
-  getLength() {
-    return this._dataStream.getValue().length;
+    const sortedData = this._sort(updatedData);
+    this._dataStream.next(sortedData);
   }
 }
 

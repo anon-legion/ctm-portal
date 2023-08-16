@@ -107,6 +107,10 @@
       (click)="rowOnClick(row)"
       [class.selected]="editRouteStop === row._id"
       *matRowDef="let row; columns: displayedColumns"></tr>
+
+    <tr class="mat-row" *matNoDataRow>
+      <td class="mat-cell" colspan="4">Empty</td>
+    </tr>
   </table>
 </div>
 
