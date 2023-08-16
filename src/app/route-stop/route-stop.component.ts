@@ -305,7 +305,6 @@ export class RouteStopComponent implements OnInit, OnDestroy {
   }
 
   rowOnClick(row: RouteStopTableData) {
-    console.log(row);
     const rowId = row._id;
     const rowCityId = row.placeId.cityId._id;
     const rowRouteId = row.routeId;
@@ -381,7 +380,6 @@ export class RouteStopComponent implements OnInit, OnDestroy {
         this.dataService.getAllPlaces().then(res => {
           const { status, data } = res;
           this._lastCityId = cityId;
-          this.selectedCity = this.allCity;
 
           if (status !== StatusCode.Ok || !data.length) {
             this.placeOptions = [];
@@ -401,11 +399,12 @@ export class RouteStopComponent implements OnInit, OnDestroy {
       ) {
         this.dataService.getPlacesByCityId(cityId).then(res => {
           const { status, data } = res;
+          this._lastCityId = cityId;
+
           if (status !== StatusCode.Ok || !data.length) {
             this.placeOptions = [];
           } else {
             this.placeOptions = data;
-            console.log(this.placeOptions);
           }
           // trigger autocomplete to update options
           this.nameControl.setValue(' ');
@@ -416,7 +415,7 @@ export class RouteStopComponent implements OnInit, OnDestroy {
       if (routeId === this.allRoute._id && routeId !== this._lastRouteId) {
         this.dataService.getAllRouteStops().then(res => {
           const { status, data } = res;
-          this.selectedRoute = this.allRoute;
+          this._lastRouteId = routeId;
 
           if (status !== StatusCode.Ok || !data.length) {
             this.routeStopList.setData([]);
@@ -438,6 +437,8 @@ export class RouteStopComponent implements OnInit, OnDestroy {
       ) {
         this.dataService.getRouteStopsByRouteId(routeId).then(res => {
           const { status, data } = res;
+          this._lastRouteId = routeId;
+
           if (status !== StatusCode.Ok || !data.length) {
             this.routeStopList.setData([]);
           } else {
@@ -451,7 +452,7 @@ export class RouteStopComponent implements OnInit, OnDestroy {
       startWith(''),
       map(val => {
         const name = typeof val === 'string' ? val : val?.name;
-        return name ? this._filter(name as string) : this.placeOptions.slice();
+        return name ? this._filter(name as string) : [...this.placeOptions];
       })
     );
   }
