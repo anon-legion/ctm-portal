@@ -63,7 +63,6 @@ export class RouteStopComponent implements OnInit, OnDestroy {
   }
   private _sub: Subscription = new Subscription();
   private _lastCityId = '';
-  private _lastRouteId = '';
   allCity: City = {
     _id: 'all',
     name: 'all places',
@@ -433,14 +432,14 @@ export class RouteStopComponent implements OnInit, OnDestroy {
         });
       }
 
-      if (routeId === this.allRoute._id && routeId !== this._lastRouteId) {
+      if (routeId === this.allRoute._id) {
         this.dataService.getAllRouteStops().then(res => {
           const { status, data } = res;
-          this._lastRouteId = routeId;
 
           if (status !== StatusCode.Ok || !data.length) {
             this.routeStopList.setData([]);
           } else {
+            // set routeStopList data based on cityId
             const filteredRouteStops = data.filter(routeStop =>
               cityId === this.allCity._id
                 ? true
@@ -451,14 +450,9 @@ export class RouteStopComponent implements OnInit, OnDestroy {
         });
       }
 
-      if (
-        routeId &&
-        routeId !== this.allRoute._id &&
-        routeId !== this._lastRouteId
-      ) {
+      if (routeId && routeId !== this.allRoute._id) {
         this.dataService.getRouteStopsByRouteId(routeId).then(res => {
           const { status, data } = res;
-          this._lastRouteId = routeId;
 
           if (status !== StatusCode.Ok || !data.length) {
             this.routeStopList.setData([]);

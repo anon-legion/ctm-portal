@@ -54,6 +54,10 @@ class TableDataSource<
 
     this._dataStream.next(updatedData);
   }
+
+  getLength() {
+    return this._dataStream.getValue().length;
+  }
 }
 
 export default TableDataSource;
