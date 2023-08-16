@@ -35,10 +35,9 @@
       type="text"
       formControlName="name"
       [matAutocomplete]="placeAuto"
-      [matAutocompleteDisabled]="true"
       class="is-capitalized" />
     <mat-autocomplete #placeAuto="matAutocomplete" [displayWith]="displayFn">
-      <!-- update mat-autocomplete to use [value]=place.name and (optionSelected) to detect if place is new -->
+      <!-- update mat-autocomplete to use [value]=place.name and () to detect if place is new -->
       <mat-option
         *ngFor="let place of filteredPlaceOptions | async"
         [value]="place">

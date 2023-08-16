@@ -27,7 +27,6 @@ export class AppComponent {
     this._router.events.subscribe((e: RouterEvent) => {
       if (e instanceof NavigationEnd) {
         this.currentRoute = e.url.split('?')[0].replace('/', '');
-        console.log(this.currentRoute);
       }
     });
   }

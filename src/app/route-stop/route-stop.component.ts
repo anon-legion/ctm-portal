@@ -388,6 +388,9 @@ export class RouteStopComponent implements OnInit, OnDestroy {
           } else {
             this.placeOptions = data;
           }
+          // trigger autocomplete to update options
+          this.nameControl.setValue(' ');
+          this.nameControl.setValue('');
         });
       }
 
@@ -402,7 +405,11 @@ export class RouteStopComponent implements OnInit, OnDestroy {
             this.placeOptions = [];
           } else {
             this.placeOptions = data;
+            console.log(this.placeOptions);
           }
+          // trigger autocomplete to update options
+          this.nameControl.setValue(' ');
+          this.nameControl.setValue('');
         });
       }
 
