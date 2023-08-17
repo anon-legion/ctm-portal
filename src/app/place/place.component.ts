@@ -83,6 +83,7 @@ export class PlaceComponent implements OnInit, OnDestroy {
     aliases: this.aliasControl,
     isActive: this.isActiveControl,
   });
+  isCitySelectDisabled = false;
   isEditMode = false;
 
   constructor(
@@ -145,6 +146,7 @@ export class PlaceComponent implements OnInit, OnDestroy {
         .updatePlaceById(this.selectedPlace, formData)
         .then(res => {
           const { status, data } = res;
+
           if (status === StatusCode.NotFound) return;
           if (status === StatusCode.Conflict) {
             nameControl.setErrors({ error: 'duplicate' });
@@ -158,6 +160,7 @@ export class PlaceComponent implements OnInit, OnDestroy {
             this._snackBar.open('Update success', 'Close', { duration: 3000 });
             this.placeList.updateById(data._id, data);
             this.placeForm.reset({ isActive: true });
+            this.isCitySelectDisabled = false;
             this.isEditMode = false;
             this.selectedPlace = '';
           }
@@ -200,6 +203,7 @@ export class PlaceComponent implements OnInit, OnDestroy {
           duration: 3000,
         });
         this.selectedPlace = '';
+        this.isCitySelectDisabled = false;
         this.isEditMode = false;
         this.placeForm.reset({ isActive: true });
       }
@@ -248,10 +252,11 @@ export class PlaceComponent implements OnInit, OnDestroy {
 
   rowOnClick(row: PlaceTableData) {
     if (row._id === this.selectedPlace) {
-      this.selectedPlace = '';
-      this.isEditMode = false;
       this.placeForm.reset({ isActive: true });
       this.url.setQueryParams({ placeId: null });
+      this.isCitySelectDisabled = false;
+      this.isEditMode = false;
+      this.selectedPlace = '';
       return;
     }
 
@@ -261,6 +266,7 @@ export class PlaceComponent implements OnInit, OnDestroy {
     if (!placeCity) return;
 
     this.isEditMode = true;
+    this.isCitySelectDisabled = true;
     this.selectedCity = placeCity;
     this.selectedPlace = row._id;
     this.placeForm.setValue({
@@ -300,6 +306,7 @@ export class PlaceComponent implements OnInit, OnDestroy {
 
         if (placeId && place) {
           this.isEditMode = true;
+          this.isCitySelectDisabled = true;
           this.selectedPlace = placeId;
           this.placeForm.setValue({
             name: place.name,

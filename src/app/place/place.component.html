@@ -3,7 +3,8 @@
     <mat-label>Select a city</mat-label>
     <mat-select
       [(value)]="selectedCity"
-      (selectionChange)="selectCityOnChange($event)">
+      (selectionChange)="selectCityOnChange($event)"
+      [disabled]="isCitySelectDisabled">
       <mat-option [value]="allCity">All Cities</mat-option>
       <mat-option *ngFor="let city of cityList" [value]="city">
         {{ city.name }}
@@ -61,7 +62,9 @@
     </ng-container>
     <ng-container matColumnDef="cityId">
       <th mat-header-cell *matHeaderCellDef>City</th>
-      <td mat-cell *matCellDef="let element">{{ element.cityId.name }}</td>
+      <td mat-cell *matCellDef="let element">
+        {{ element.cityId?.name || 'n/a' }}
+      </td>
     </ng-container>
     <ng-container matColumnDef="isActive">
       <th mat-header-cell *matHeaderCellDef>Active</th>

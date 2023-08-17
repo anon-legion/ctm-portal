@@ -97,8 +97,8 @@ export class RouteStopComponent implements OnInit, OnDestroy {
     distance: this.distanceControl,
     isActive: this.isActiveControl,
   });
-  isEditMode = false;
   isCitySelectDisabled = false;
+  isEditMode = false;
 
   constructor(
     private _router: Router,
@@ -241,10 +241,10 @@ export class RouteStopComponent implements OnInit, OnDestroy {
             this._snackBar.open('Success', 'Close', { duration: 3000 });
             this.routeStopList.updateById(data._id, data);
             this.routeStopForm.reset({ isActive: true });
-            this.editRouteStop = '';
-            this.isEditMode = false;
             nameControl.enable();
             this.isCitySelectDisabled = false;
+            this.isEditMode = false;
+            this.editRouteStop = '';
             return;
           }
         });
@@ -324,11 +324,11 @@ export class RouteStopComponent implements OnInit, OnDestroy {
 
     // deselect row if already selected
     if (rowId === this.editRouteStop) {
-      this.editRouteStop = '';
-      this.isEditMode = false;
       this.routeStopForm.reset({ isActive: true });
       nameControl?.enable();
       this.isCitySelectDisabled = false;
+      this.isEditMode = false;
+      this.editRouteStop = '';
       return;
     }
 
@@ -359,6 +359,8 @@ export class RouteStopComponent implements OnInit, OnDestroy {
       routeId: reqBusRoute?._id ?? this.allRoute._id,
     });
     this.isEditMode = true;
+    nameControl?.disable();
+    this.isCitySelectDisabled = true;
     this.editRouteStop = rowId;
     setTimeout(() => {
       this.routeStopForm.setValue({
@@ -367,11 +369,10 @@ export class RouteStopComponent implements OnInit, OnDestroy {
         isActive: row.isActive,
       });
     }, 400);
-    nameControl?.disable();
-    this.isCitySelectDisabled = true;
   }
 
   deleteOnClick(placeId: RouteStop['_id']) {
+    const nameControl = this.routeStopForm.get('name');
     this.dataService.deleteRouteStopById(placeId).then(res => {
       const { status } = res;
 
@@ -380,9 +381,11 @@ export class RouteStopComponent implements OnInit, OnDestroy {
         this._snackBar.open('Deleted', 'Close', {
           duration: 3000,
         });
-        this.editRouteStop = '';
-        this.isEditMode = false;
         this.routeStopForm.reset({ isActive: true });
+        nameControl?.enable();
+        this.isCitySelectDisabled = false;
+        this.isEditMode = false;
+        this.editRouteStop = '';
       }
     });
   }
