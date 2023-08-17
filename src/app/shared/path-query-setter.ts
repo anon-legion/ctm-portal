@@ -12,7 +12,7 @@ class PathQuerySetter {
 
   // call method with no arguments to set query params to default
   setQueryParams(
-    queryParams: Record<string, string> = { ...this._defaultQueryParams }
+    queryParams: Record<string, string | null> = { ...this._defaultQueryParams }
   ) {
     this._router.navigate([], {
       relativeTo: this._route,

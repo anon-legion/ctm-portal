@@ -10,10 +10,7 @@ import {
 import { ActivatedRoute, Router } from '@angular/router';
 import { Observable, Subscription } from 'rxjs';
 import { startWith, map } from 'rxjs/operators';
-import {
-  MatAutocompleteModule,
-  MatAutocompleteSelectedEvent,
-} from '@angular/material/autocomplete';
+import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -101,6 +98,7 @@ export class RouteStopComponent implements OnInit, OnDestroy {
     isActive: this.isActiveControl,
   });
   isEditMode = false;
+  isCitySelectDisabled = false;
 
   constructor(
     private _router: Router,
@@ -199,7 +197,6 @@ export class RouteStopComponent implements OnInit, OnDestroy {
 
   selectRouteOnChange(e: MatSelectChange) {
     const busRoute = e.value as BusRoute;
-
     this.url.setQueryParams({ routeId: busRoute._id });
   }
 
@@ -234,10 +231,12 @@ export class RouteStopComponent implements OnInit, OnDestroy {
         distance,
         isActive: this.isActiveControl.value,
       } as RouteStop;
+
       this.dataService
         .updateRouteStopById(this.editRouteStop, formData)
         .then(res => {
           const { status, data } = res;
+
           if (status === StatusCode.Ok) {
             this._snackBar.open('Success', 'Close', { duration: 3000 });
             this.routeStopList.updateById(data._id, data);
@@ -245,6 +244,7 @@ export class RouteStopComponent implements OnInit, OnDestroy {
             this.editRouteStop = '';
             this.isEditMode = false;
             nameControl.enable();
+            this.isCitySelectDisabled = false;
             return;
           }
         });
@@ -257,8 +257,10 @@ export class RouteStopComponent implements OnInit, OnDestroy {
         name: toTitleCase(name),
         isActive: this.isActiveControl.value,
       };
+
       this.dataService.addNewPlace(formData as Place).then(placeRes => {
         const { status, data } = placeRes;
+
         if (status === StatusCode.Conflict) {
           nameControl.setErrors({ conflict: true });
           this._snackBar.open('Name already exists', 'Close', {
@@ -266,12 +268,14 @@ export class RouteStopComponent implements OnInit, OnDestroy {
           });
           return;
         }
+
         if (status !== StatusCode.Created) {
           this._snackBar.open('Something went wrong', 'Close', {
             duration: 3000,
           });
           return;
         }
+
         this.dataService
           .addNewRouteStop({
             routeId: this.selectedRoute._id,
@@ -281,6 +285,7 @@ export class RouteStopComponent implements OnInit, OnDestroy {
           } as RouteStop)
           .then(routeStopRes => {
             const { status, data } = routeStopRes;
+
             if (status === StatusCode.Created) {
               this._snackBar.open('Success', 'Close', { duration: 3000 });
               this.routeStopList.push(data);
@@ -299,8 +304,10 @@ export class RouteStopComponent implements OnInit, OnDestroy {
         distance,
         isActive: this.isActiveControl.value,
       };
+
       this.dataService.addNewRouteStop(formData as RouteStop).then(res => {
         const { status, data } = res;
+
         if (status === StatusCode.Created) {
           this._snackBar.open('Success', 'Close', { duration: 3000 });
           this.routeStopList.push(data);
@@ -314,12 +321,6 @@ export class RouteStopComponent implements OnInit, OnDestroy {
   rowOnClick(row: RouteStopTableData) {
     const nameControl = this.routeStopForm.get('name');
     const rowId = row._id;
-    const rowCityId = row.placeId.cityId._id;
-    const rowRouteId = row.routeId;
-    const reqCity = this.cityList.find(city => city._id === rowCityId);
-    const reqBusRoute = this.allBusRoutes.find(
-      route => route._id === rowRouteId
-    );
 
     // deselect row if already selected
     if (rowId === this.editRouteStop) {
@@ -327,8 +328,16 @@ export class RouteStopComponent implements OnInit, OnDestroy {
       this.isEditMode = false;
       this.routeStopForm.reset({ isActive: true });
       nameControl?.enable();
+      this.isCitySelectDisabled = false;
       return;
     }
+
+    const rowCityId = row.placeId.cityId._id;
+    const rowRouteId = row.routeId;
+    const reqCity = this.cityList.find(city => city._id === rowCityId);
+    const reqBusRoute = this.allBusRoutes.find(
+      route => route._id === rowRouteId
+    );
 
     // set selected city
     if (reqCity && this.selectedCity !== reqCity) {
@@ -351,17 +360,21 @@ export class RouteStopComponent implements OnInit, OnDestroy {
     });
     this.isEditMode = true;
     this.editRouteStop = rowId;
-    this.routeStopForm.setValue({
-      name: selectedPlace ?? null,
-      distance: row.distance,
-      isActive: row.isActive,
-    });
+    setTimeout(() => {
+      this.routeStopForm.setValue({
+        name: selectedPlace ?? null,
+        distance: row.distance,
+        isActive: row.isActive,
+      });
+    }, 400);
     nameControl?.disable();
+    this.isCitySelectDisabled = true;
   }
 
   deleteOnClick(placeId: RouteStop['_id']) {
     this.dataService.deleteRouteStopById(placeId).then(res => {
       const { status } = res;
+
       if (status === StatusCode.Ok) {
         this.routeStopList.removeById(placeId);
         this._snackBar.open('Deleted', 'Close', {
@@ -375,7 +388,14 @@ export class RouteStopComponent implements OnInit, OnDestroy {
   }
 
   navigateTo() {
-    this._router.navigate(['places']);
+    const routeStop = this.routeStopList.findById(this.editRouteStop);
+    this._router.navigate(['places'], {
+      queryParams: {
+        cityId: this.selectedCity._id,
+        placeId: routeStop?.placeId._id,
+      },
+      queryParamsHandling: 'merge',
+    });
   }
 
   // helper function for autocomplete to parse object to string
@@ -383,18 +403,10 @@ export class RouteStopComponent implements OnInit, OnDestroy {
     return place && place.name ? place.name : '';
   }
 
-  onOptionSelected(e: MatAutocompleteSelectedEvent) {
-    const place = e.option.value as PlaceTableData;
-    console.log('event');
-    console.dir(e);
-    console.log('value');
-    console.log(place);
-  }
-
   ngOnInit() {
     this._sub = this._route.queryParamMap.subscribe(params => {
-      const cityId = params.get('cityId');
-      const routeId = params.get('routeId');
+      const cityId = params.get('cityId') ?? '';
+      const routeId = params.get('routeId') ?? '';
 
       if (cityId === this.allCity._id && cityId !== this._lastCityId) {
         this.dataService.getAllPlaces().then(res => {

@@ -5,7 +5,8 @@
     <mat-label>Select a city</mat-label>
     <mat-select
       [(value)]="selectedCity"
-      (selectionChange)="selectCityOnChange($event)">
+      (selectionChange)="selectCityOnChange($event)"
+      [disabled]="isCitySelectDisabled">
       <mat-option [value]="allCity">All Cities</mat-option>
       <mat-option *ngFor="let city of cityList" [value]="city">
         {{ city.name }}
@@ -36,11 +37,7 @@
       formControlName="name"
       [matAutocomplete]="placeAuto"
       class="is-capitalized" />
-    <mat-autocomplete
-      #placeAuto="matAutocomplete"
-      [displayWith]="displayFn"
-      (optionSelected)="onOptionSelected($event)">
-      <!-- update mat-autocomplete to use [value]=place.name and () to detect if place is new -->
+    <mat-autocomplete #placeAuto="matAutocomplete" [displayWith]="displayFn">
       <mat-option
         *ngFor="let place of filteredPlaceOptions | async"
         [value]="place">
@@ -127,7 +124,8 @@
     mat-raised-button
     color="accent"
     class="uniform-button"
+    [disabled]="!editRouteStop"
     (click)="navigateTo()">
-    Places
+    Edit Place
   </button>
 </div>

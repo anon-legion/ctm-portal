@@ -114,6 +114,8 @@ export class PlaceComponent implements OnInit, OnDestroy {
         return;
       }
 
+      if (currentCity === this.allCity) return;
+
       this.selectedCity = currentCity;
     });
   }
@@ -151,6 +153,7 @@ export class PlaceComponent implements OnInit, OnDestroy {
             });
             return;
           }
+
           if (status === StatusCode.Ok) {
             this._snackBar.open('Update success', 'Close', { duration: 3000 });
             this.placeList.updateById(data._id, data);
@@ -165,6 +168,7 @@ export class PlaceComponent implements OnInit, OnDestroy {
     // add new place
     this.dataService.addNewPlace(formData).then(res => {
       const { status, data } = res;
+
       if (status === StatusCode.Conflict) {
         nameControl.setErrors({ conflict: true });
         this._snackBar.open('Name already exists', 'Close', {
@@ -172,6 +176,7 @@ export class PlaceComponent implements OnInit, OnDestroy {
         });
         return;
       }
+
       if (status === StatusCode.Created) {
         this._snackBar.open('Success', 'Close', {
           duration: 3000,
@@ -180,6 +185,7 @@ export class PlaceComponent implements OnInit, OnDestroy {
         this.placeForm.reset({ isActive: true });
         return;
       }
+
       this._snackBar.open('Something went wrong', 'Close', { duration: 3000 });
     });
   }
@@ -187,6 +193,7 @@ export class PlaceComponent implements OnInit, OnDestroy {
   deleteOnClick(placeId: string) {
     this.dataService.deletePlaceById(placeId).then(res => {
       const { status } = res;
+
       if (status === StatusCode.Ok) {
         this.placeList.removeById(placeId);
         this._snackBar.open('Deleted', 'Close', {
@@ -210,12 +217,7 @@ export class PlaceComponent implements OnInit, OnDestroy {
     }
 
     const city = e.value as City;
-
-    this._router.navigate([], {
-      relativeTo: this._route,
-      queryParams: { cityId: city._id },
-      queryParamsHandling: 'merge',
-    });
+    this.url.setQueryParams({ cityId: city._id });
   }
 
   removeKeyword(alias: string) {
@@ -249,6 +251,7 @@ export class PlaceComponent implements OnInit, OnDestroy {
       this.selectedPlace = '';
       this.isEditMode = false;
       this.placeForm.reset({ isActive: true });
+      this.url.setQueryParams({ placeId: null });
       return;
     }
 
@@ -256,14 +259,6 @@ export class PlaceComponent implements OnInit, OnDestroy {
     const placeCity = this.cityList.find(city => city._id === row.cityId._id);
 
     if (!placeCity) return;
-
-    if (cityId !== placeCity?._id) {
-      this._router.navigate([], {
-        relativeTo: this._route,
-        queryParams: { cityId: placeCity?._id },
-        queryParamsHandling: 'merge',
-      });
-    }
 
     this.isEditMode = true;
     this.selectedCity = placeCity;
@@ -273,12 +268,20 @@ export class PlaceComponent implements OnInit, OnDestroy {
       aliases: row.aliases ?? [],
       isActive: row.isActive ?? true,
     });
+
+    if (cityId !== placeCity?._id) {
+      this.url.setQueryParams({ cityId: placeCity?._id, placeId: row._id });
+      return;
+    }
+    this.url.setQueryParams({ placeId: row._id });
   }
 
   ngOnInit() {
     // handles updating placeList when cityId changes
     this._sub = this._route.queryParamMap.subscribe(params => {
-      const cityId = params.get('cityId') || '';
+      const cityId = params.get('cityId') ?? '';
+      const placeId = params.get('placeId') ?? '';
+
       if (!cityId || cityId === this.allCity._id) {
         getAllPlaces(this.dataService, this.placeList);
         return;
@@ -286,11 +289,24 @@ export class PlaceComponent implements OnInit, OnDestroy {
 
       this.dataService.getPlacesByCityId(cityId).then(res => {
         const { status, data } = res;
+
         if (status === StatusCode.Ok && data.length) {
           this.placeList.setData(data);
-          return;
+        } else {
+          this.placeList.setData([]);
         }
-        this.placeList.setData([]);
+
+        const place = data.find(place => place._id === placeId);
+
+        if (placeId && place) {
+          this.isEditMode = true;
+          this.selectedPlace = placeId;
+          this.placeForm.setValue({
+            name: place.name,
+            aliases: place.aliases ?? [],
+            isActive: place.isActive ?? true,
+          });
+        }
       });
     });
   }
