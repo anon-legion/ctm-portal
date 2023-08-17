@@ -1,25 +1,25 @@
 import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ActivatedRoute, Router, RouterModule } from '@angular/router';
+import { HttpStatusCode as StatusCode } from '@angular/common/http';
 import {
+  ReactiveFormsModule,
   FormControl,
   FormGroup,
-  ReactiveFormsModule,
   Validators,
 } from '@angular/forms';
-import { HttpStatusCode as StatusCode } from '@angular/common/http';
-import { MatIconModule } from '@angular/material/icon';
+import { ActivatedRoute, Router } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
-import { MatInputModule } from '@angular/material/input';
-import { MatSelectChange, MatSelectModule } from '@angular/material/select';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatSlideToggleModule } from '@angular/material/slide-toggle';
-import { MatListModule, MatListOption } from '@angular/material/list';
 import { MatDividerModule } from '@angular/material/divider';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatIconModule } from '@angular/material/icon';
+import { MatInputModule } from '@angular/material/input';
+import { MatListModule, MatListOption } from '@angular/material/list';
+import { MatSelectModule, MatSelectChange } from '@angular/material/select';
+import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatSnackBarModule, MatSnackBar } from '@angular/material/snack-bar';
 import { DataService } from '../data.service';
-import { City, BusRoute } from '../types';
 import { sortObjArrByProp, toTitleCase } from '../shared/utils';
+import { City, BusRoute } from '../types';
 
 function getAllBusRoutes(service: DataService, routeList: BusRoute[]) {
   // reassign the reference to the array to update the view
@@ -42,16 +42,15 @@ function getAllBusRoutes(service: DataService, routeList: BusRoute[]) {
   standalone: true,
   imports: [
     CommonModule,
-    RouterModule,
     ReactiveFormsModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatSelectModule,
     MatButtonModule,
-    MatIconModule,
-    MatSlideToggleModule,
-    MatListModule,
     MatDividerModule,
+    MatFormFieldModule,
+    MatIconModule,
+    MatInputModule,
+    MatListModule,
+    MatSelectModule,
+    MatSlideToggleModule,
     MatSnackBarModule,
   ],
   template: `
