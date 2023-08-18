@@ -66,15 +66,15 @@
         {{ element.cityId?.name || 'n/a' }}
       </td>
     </ng-container>
-    <ng-container matColumnDef="isActive">
-      <th mat-header-cell *matHeaderCellDef>Active</th>
-      <td mat-cell *matCellDef="let element">{{ element.isActive }}</td>
-    </ng-container>
     <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
     <tr
       mat-row
       (click)="rowOnClick(row)"
       *matRowDef="let row; columns: displayedColumns"></tr>
+
+    <tr class="mat-row" *matNoDataRow>
+      <td class="mat-cell" colspan="4">Empty</td>
+    </tr>
   </table>
 </div>
 

@@ -87,17 +87,9 @@
       </td>
     </ng-container>
     <ng-container matColumnDef="cityId">
-      <th mat-header-cell *matHeaderCellDef style="text-align: center">City</th>
-      <td mat-cell *matCellDef="let element" style="text-align: center">
+      <th mat-header-cell *matHeaderCellDef style="text-align: end">City</th>
+      <td mat-cell *matCellDef="let element" style="text-align: end">
         {{ element.placeId?.cityId?.name || 'n/a' }}
-      </td>
-    </ng-container>
-    <ng-container matColumnDef="isActive">
-      <th mat-header-cell *matHeaderCellDef style="text-align: center">
-        Active
-      </th>
-      <td mat-cell *matCellDef="let element" style="text-align: center">
-        {{ element.isActive }}
       </td>
     </ng-container>
     <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>

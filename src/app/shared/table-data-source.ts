@@ -1,10 +1,10 @@
 import { DataSource } from '@angular/cdk/collections';
 import { Observable, BehaviorSubject } from 'rxjs';
 import { sortObjArrByProp } from './utils';
-import { PlaceTableData, RouteStopTableData } from '../types';
+import { PlaceTd, RouteStopTd, BusRoute } from '../types';
 
 class TableDataSource<
-  T extends PlaceTableData | RouteStopTableData,
+  T extends PlaceTd | RouteStopTd | BusRoute,
 > extends DataSource<T> {
   private _dataStream = new BehaviorSubject<T[]>([]);
   private _sort(data: Array<T>) {

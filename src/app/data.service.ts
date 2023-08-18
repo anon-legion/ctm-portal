@@ -3,9 +3,9 @@ import {
   City,
   BusRoute,
   Place,
-  PlaceTableData,
+  PlaceTd,
   RouteStop,
-  RouteStopTableData,
+  RouteStopTd,
   ApiResponse,
 } from './types';
 
@@ -108,7 +108,7 @@ export class DataService {
     return { status: res.status, ok: res.ok, data: json };
   }
 
-  async addNewPlace(data: Place): Promise<ApiResponse<PlaceTableData>> {
+  async addNewPlace(data: Place): Promise<ApiResponse<PlaceTd>> {
     const options = {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -119,7 +119,7 @@ export class DataService {
     return { status: res.status, ok: res.ok, data: json };
   }
 
-  async getAllPlaces(): Promise<ApiResponse<PlaceTableData[]>> {
+  async getAllPlaces(): Promise<ApiResponse<PlaceTd[]>> {
     const res = await fetch(`${this.url}/places`);
     const json = (await res.json()) ?? [];
     return { status: res.status, ok: res.ok, data: json };
@@ -135,7 +135,7 @@ export class DataService {
   async updatePlaceById(
     id: Place['_id'],
     data: Place
-  ): Promise<ApiResponse<PlaceTableData>> {
+  ): Promise<ApiResponse<PlaceTd>> {
     const options = {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
@@ -146,9 +146,7 @@ export class DataService {
     return { status: res.status, ok: res.ok, data: json };
   }
 
-  async getPlacesByCityId(
-    id: City['_id']
-  ): Promise<ApiResponse<PlaceTableData[]>> {
+  async getPlacesByCityId(id: City['_id']): Promise<ApiResponse<PlaceTd[]>> {
     const res = await fetch(`${this.url}/cities/${id}/places`);
     const json = (await res.json()) ?? [];
     return { status: res.status, ok: res.ok, data: json };
@@ -156,21 +154,19 @@ export class DataService {
 
   async getRouteStopsByRouteId(
     id: BusRoute['_id']
-  ): Promise<ApiResponse<RouteStopTableData[]>> {
+  ): Promise<ApiResponse<RouteStopTd[]>> {
     const res = await fetch(`${this.url}/bus-routes/${id}/stops`);
     const json = (await res.json()) ?? [];
     return { status: res.status, ok: res.ok, data: json };
   }
 
-  async getAllRouteStops(): Promise<ApiResponse<RouteStopTableData[]>> {
+  async getAllRouteStops(): Promise<ApiResponse<RouteStopTd[]>> {
     const res = await fetch(`${this.url}/route-stops`);
     const json = (await res.json()) ?? [];
     return { status: res.status, ok: res.ok, data: json };
   }
 
-  async addNewRouteStop(
-    data: RouteStop
-  ): Promise<ApiResponse<RouteStopTableData>> {
+  async addNewRouteStop(data: RouteStop): Promise<ApiResponse<RouteStopTd>> {
     const options = {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -184,7 +180,7 @@ export class DataService {
   async updateRouteStopById(
     id: RouteStop['_id'],
     data: RouteStop
-  ): Promise<ApiResponse<RouteStopTableData>> {
+  ): Promise<ApiResponse<RouteStopTd>> {
     const options = {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
@@ -197,7 +193,7 @@ export class DataService {
 
   async deleteRouteStopById(
     id: RouteStop['_id']
-  ): Promise<ApiResponse<RouteStopTableData>> {
+  ): Promise<ApiResponse<RouteStopTd>> {
     const options = { method: 'DELETE' };
     const res = await fetch(`${this.url}/route-stops/${id}`, options);
     const json = (await res.json()) ?? {};

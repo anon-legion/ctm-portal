@@ -27,8 +27,8 @@ import { toTitleCase } from '../shared/utils';
 import {
   BusRoute,
   City,
-  PlaceTableData,
-  RouteStopTableData,
+  PlaceTd,
+  RouteStopTd,
   RouteStop,
   Place,
 } from '../types';
@@ -54,7 +54,7 @@ import {
   styleUrls: ['./route-stop.component.scss'],
 })
 export class RouteStopComponent implements OnInit, OnDestroy {
-  private _filter(name: string): PlaceTableData[] {
+  private _filter(name: string): PlaceTd[] {
     const filterRegex = new RegExp(name, 'i');
     return this.placeOptions.filter(place => filterRegex.test(place.name));
   }
@@ -75,15 +75,15 @@ export class RouteStopComponent implements OnInit, OnDestroy {
   selectedRoute = this.allRoute;
   allBusRoutes: BusRoute[] = [];
   cityRouteList: BusRoute[] = [];
-  routeStopList = new TableDataSource<RouteStopTableData>([]);
-  editRouteStop: RouteStopTableData['_id'] = '';
-  placeOptions: PlaceTableData[] = [];
-  filteredPlaceOptions: Observable<PlaceTableData[]> = new Observable();
+  routeStopList = new TableDataSource<RouteStopTd>([]);
+  editRouteStop: RouteStopTd['_id'] = '';
+  placeOptions: PlaceTd[] = [];
+  filteredPlaceOptions: Observable<PlaceTd[]> = new Observable();
+  displayedColumns = ['name', 'distance', 'cityId'];
   url: PathQuerySetter;
-  displayedColumns = ['name', 'distance', 'cityId', 'isActive'];
 
   // form properties
-  nameControl = new FormControl<string | PlaceTableData>('', [
+  nameControl = new FormControl<string | PlaceTd>('', [
     Validators.required,
     Validators.minLength(3),
   ]);
@@ -224,7 +224,7 @@ export class RouteStopComponent implements OnInit, OnDestroy {
     const distance = Number(distanceControl.value);
 
     if (this.isEditMode) {
-      const place = name as PlaceTableData;
+      const place = name as PlaceTd;
       const formData = {
         routeId: this.selectedRoute._id,
         placeId: place._id,
@@ -297,7 +297,7 @@ export class RouteStopComponent implements OnInit, OnDestroy {
     }
 
     if (typeof name === 'object') {
-      const place = name as PlaceTableData;
+      const place = name as PlaceTd;
       const formData = {
         routeId: this.selectedRoute._id,
         placeId: place._id,
@@ -318,7 +318,7 @@ export class RouteStopComponent implements OnInit, OnDestroy {
     }
   }
 
-  rowOnClick(row: RouteStopTableData) {
+  rowOnClick(row: RouteStopTd) {
     const nameControl = this.routeStopForm.get('name');
     const rowId = row._id;
 
@@ -402,7 +402,7 @@ export class RouteStopComponent implements OnInit, OnDestroy {
   }
 
   // helper function for autocomplete to parse object to string
-  displayFn(place: PlaceTableData): string {
+  displayFn(place: PlaceTd): string {
     return place && place.name ? place.name : '';
   }
 

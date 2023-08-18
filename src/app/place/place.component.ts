@@ -23,11 +23,11 @@ import { DataService } from '../data.service';
 import PathQuerySetter from '../shared/path-query-setter';
 import TableDataSource from '../shared/table-data-source';
 import { toTitleCase } from '../shared/utils';
-import { Place, City, PlaceTableData } from '../types';
+import { Place, City, PlaceTd } from '../types';
 
 function getAllPlaces(
   service: DataService,
-  placeList: TableDataSource<PlaceTableData>
+  placeList: TableDataSource<PlaceTd>
 ) {
   service.getAllPlaces().then(res => {
     if (res.status !== StatusCode.Ok || !res.data.length) {
@@ -67,9 +67,9 @@ export class PlaceComponent implements OnInit, OnDestroy {
   };
   selectedCity = this.allCity;
   selectedPlace: Place['_id'] = '';
-  placeList = new TableDataSource<PlaceTableData>([]);
+  placeList = new TableDataSource<PlaceTd>([]);
+  displayedColumns = ['name', 'cityId'];
   url: PathQuerySetter;
-  displayedColumns = ['name', 'cityId', 'isActive'];
 
   // form properties
   nameControl = new FormControl('', [
@@ -126,7 +126,7 @@ export class PlaceComponent implements OnInit, OnDestroy {
   }
 
   placeFormOnSubmit() {
-    const nameControl = this.placeForm.get('name');
+    const nameControl = this.nameControl;
     if (!nameControl || !nameControl.value) return;
     if (this.selectedCity === this.allCity) {
       this._snackBar.open('Please select a city', 'Close', { duration: 3000 });
@@ -250,7 +250,7 @@ export class PlaceComponent implements OnInit, OnDestroy {
     event.chipInput.clear();
   }
 
-  rowOnClick(row: PlaceTableData) {
+  rowOnClick(row: PlaceTd) {
     if (row._id === this.selectedPlace) {
       this.placeForm.reset({ isActive: true });
       this.url.setQueryParams({ placeId: null });

@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpStatusCode as StatusCode } from '@angular/common/http';
 import {
@@ -8,32 +8,32 @@ import {
   Validators,
 } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
+import { Subscription } from 'rxjs';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
-import { MatListModule, MatListOption } from '@angular/material/list';
 import { MatSelectModule, MatSelectChange } from '@angular/material/select';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatSnackBarModule, MatSnackBar } from '@angular/material/snack-bar';
+import { MatTableModule } from '@angular/material/table';
 import { DataService } from '../data.service';
-import { sortObjArrByProp, toTitleCase } from '../shared/utils';
+import PathQuerySetter from '../shared/path-query-setter';
+import TableDataSource from '../shared/table-data-source';
+import { toTitleCase } from '../shared/utils';
 import { City, BusRoute } from '../types';
 
-function getAllBusRoutes(service: DataService, routeList: BusRoute[]) {
-  // reassign the reference to the array to update the view
-  function setRouteList(newList: BusRoute[]) {
-    routeList.length = 0;
-    routeList.push(...newList);
-  }
-
+function getAllBusRoutes(
+  service: DataService,
+  routeList: TableDataSource<BusRoute>
+) {
   service.getAllBusRoutes().then(res => {
     if (res.status !== StatusCode.Ok || !res.data.length) {
-      setRouteList([]);
+      routeList.setData([]);
       return;
     }
-    setRouteList(sortObjArrByProp<BusRoute>(res.data, 'name') as BusRoute[]);
+    routeList.setData(res.data);
   });
 }
 
@@ -48,10 +48,10 @@ function getAllBusRoutes(service: DataService, routeList: BusRoute[]) {
     MatFormFieldModule,
     MatIconModule,
     MatInputModule,
-    MatListModule,
     MatSelectModule,
     MatSlideToggleModule,
     MatSnackBarModule,
+    MatTableModule,
   ],
   template: `
     <div class="is-flex width-breakpoint-768">
@@ -94,30 +94,31 @@ function getAllBusRoutes(service: DataService, routeList: BusRoute[]) {
 
     <mat-divider class="width-breakpoint-768"></mat-divider>
     <div class="list-container mt-2 width-breakpoint-768">
-      <mat-selection-list
-        #busRoutes
-        [multiple]="false"
-        (selectionChange)="
-          selectionOnChange(busRoutes.selectedOptions.selected)
-        ">
-        <mat-list-option
-          *ngFor="let route of routeList"
-          [value]="route._id"
-          [selected]="">
-          {{ route.name }}
-        </mat-list-option>
-      </mat-selection-list>
+      <table mat-table [dataSource]="routeList">
+        <ng-container matColumnDef="name">
+          <th mat-header-cell *matHeaderCellDef>Place</th>
+          <td mat-cell *matCellDef="let element">{{ element.name }}</td>
+        </ng-container>
+        <ng-container matColumnDef="cityId">
+          <th mat-header-cell *matHeaderCellDef>City</th>
+          <td mat-cell *matCellDef="let element">
+            {{ element.cityId?.name || 'n/a' }}
+          </td>
+        </ng-container>
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr
+          mat-row
+          (click)="rowOnClick(row)"
+          *matRowDef="let row; columns: displayedColumns"></tr>
+
+        <tr class="mat-row" *matNoDataRow>
+          <td class="mat-cell" colspan="4">Empty</td>
+        </tr>
+      </table>
     </div>
 
     <div
       class="is-flex is-justify-content-space-around mt-4 width-breakpoint-768">
-      <button
-        mat-raised-button
-        color="accent"
-        class="uniform-button"
-        (click)="editOnClick(selectedBusRoute)">
-        Edit
-      </button>
       <button
         mat-raised-button
         color="warn"
@@ -136,34 +137,47 @@ function getAllBusRoutes(service: DataService, routeList: BusRoute[]) {
   `,
   styleUrls: ['./bus-route.component.scss'],
 })
-export class BusRouteComponent {
-  route = inject(ActivatedRoute);
-  dataService: DataService = inject(DataService);
-  busRouteForm = new FormGroup({
-    name: new FormControl('', [Validators.required, Validators.minLength(3)]),
-    isActive: new FormControl(true, [Validators.required]),
-  });
-  routeList: BusRoute[] = [];
-  selectedBusRoute = '';
-  selectedCity: City = {} as City;
-  isEditMode = false;
+export class BusRouteComponent implements OnInit, OnDestroy {
+  private _sub: Subscription = new Subscription();
   allCity: City = {
     _id: 'all',
     name: 'all routes',
     isActive: true,
   };
+  selectedCity = this.allCity;
+  selectedBusRoute: BusRoute['_id'] = '';
+  // routeList: BusRoute[] = [];
+  routeList = new TableDataSource<BusRoute>([]);
+  displayedColumns = ['name', 'cityId'];
+  url: PathQuerySetter;
+
+  // form properties
+  nameControl = new FormControl('', [
+    Validators.required,
+    Validators.minLength(3),
+  ]);
+  isActiveControl = new FormControl(true, [Validators.required]);
+  busRouteForm = new FormGroup({
+    name: this.nameControl,
+    isActive: this.isActiveControl,
+  });
+  isCitySelectDisabled = false;
+  isEditMode = false;
 
   constructor(
     private _snackBar: MatSnackBar,
-    private router: Router
+    private _router: Router,
+    private _route: ActivatedRoute,
+    private dataService: DataService
   ) {
-    const cityId = this.route.snapshot.queryParamMap.get('cityId');
+    this.url = new PathQuerySetter(this._router, this._route, {
+      cityId: 'all',
+    });
+    const cityId = this._route.snapshot.queryParamMap.get('cityId');
 
     if (!cityId) {
-      this.selectedCity = this.allCity;
       this.dataService.getAllCities();
-      // get all bus routes and assign to routeList
-      getAllBusRoutes(this.dataService, this.routeList);
+      this.url.setQueryParams();
       return;
     }
 
@@ -173,28 +187,13 @@ export class BusRouteComponent {
 
       // if cityId is not valid, set allCity and get all routes
       if (!currentCity) {
-        this.selectedCity = this.allCity;
-        // get all bus routes and assign to routeList
-        getAllBusRoutes(this.dataService, this.routeList);
-        // navigate to the same route without query params
-        this.router.navigate([], {
-          relativeTo: this.route,
-        });
+        this.url.setQueryParams();
         return;
       }
 
-      this.selectedCity = currentCity;
+      if (currentCity === this.allCity) return;
 
-      this.dataService.getRoutesByCityId(cityId).then(res => {
-        if (res.status === StatusCode.Ok && res.data.length) {
-          this.routeList = sortObjArrByProp<BusRoute>(
-            res.data,
-            'name'
-          ) as BusRoute[];
-          return;
-        }
-        this.routeList = [];
-      });
+      this.selectedCity = currentCity;
     });
   }
 
@@ -203,7 +202,8 @@ export class BusRouteComponent {
   }
 
   busRouteFormOnSubmit() {
-    if (!this.busRouteForm.value.name) return;
+    const nameControl = this.nameControl;
+    if (!nameControl || !nameControl.value) return;
     if (this.selectedCity === this.allCity) {
       this._snackBar.open('Please select a city', 'Close', {
         duration: 3000,
@@ -213,7 +213,7 @@ export class BusRouteComponent {
 
     const formData = {
       cityId: this.selectedCity._id,
-      name: toTitleCase(this.busRouteForm.value.name),
+      name: toTitleCase(nameControl.value),
       isActive: this.busRouteForm.value.isActive,
     } as BusRoute;
 
@@ -223,22 +223,21 @@ export class BusRouteComponent {
         .then(res => {
           const { status, data } = res;
           if (status === StatusCode.NotFound) return;
+          if (status === StatusCode.Conflict) {
+            nameControl.setErrors({ error: 'duplicate' });
+            this._snackBar.open('Name already exists', 'Close', {
+              duration: 3000,
+            });
+            return;
+          }
+
           if (status === StatusCode.Ok) {
             this._snackBar.open('Update success', 'Close', { duration: 3000 });
-
-            // filter out old route and add new route to routeList
-            const updatedRouteList = this.routeList.filter(
-              route => route._id !== this.selectedBusRoute
-            );
-            updatedRouteList.push(data);
-
-            // update routeList and reset form
-            this.routeList = sortObjArrByProp<BusRoute>(
-              updatedRouteList,
-              'name'
-            );
+            this.routeList.updateById(data._id, data);
             this.busRouteForm.reset({ isActive: true });
+            this.isCitySelectDisabled = false;
             this.isEditMode = false;
+            this.selectedBusRoute = '';
           }
         });
       return;
@@ -246,62 +245,59 @@ export class BusRouteComponent {
 
     this.dataService.addNewBusRoute(formData).then(res => {
       const { status, data } = res;
-      const control = this.busRouteForm.get('name');
-      if (status === StatusCode.Conflict && control) {
-        control.setErrors({ error: 'duplicate' });
+
+      if (status === StatusCode.Conflict) {
+        nameControl.setErrors({ conflict: true });
+        this._snackBar.open('Name already exists', 'Close', {
+          duration: 3000,
+        });
         return;
       }
+
       if (status === StatusCode.Created) {
         this._snackBar.open('New route added', 'Close', { duration: 3000 });
         this.routeList.push(data);
-        this.routeList = sortObjArrByProp<BusRoute>(this.routeList, 'name');
         this.busRouteForm.reset({ isActive: true });
       }
     });
   }
 
-  selectionOnChange(selectedOptions: MatListOption[]) {
-    const [selectedOption] = selectedOptions;
-    this.selectedBusRoute = selectedOption.value;
-  }
-
   // todo: update path query and selected city
   // on city change when route is selected for editing
-  editOnClick(busRouteId: string) {
-    const busRouteData = this.routeList.find(route => route._id === busRouteId);
-    const cityId = this.route.snapshot.queryParamMap.get('cityId');
+  rowOnClick(row: BusRoute) {
+    console.log(row);
+    // if (row._id === this.selectedBusRoute) {
+    //   this.busRouteForm.reset({ isActive: true });
+    //   this.url.setQueryParams({ placeId: null });
+    //   this.isCitySelectDisabled = false;
+    //   this.isEditMode = false;
+    //   this.selectedBusRoute = '';
+    //   return;
+    // }
+    // const cityId = this._route.snapshot.queryParamMap.get('cityId');
+    // const placeCity = this.cityList.find(city => city._id === row._id);
 
-    if (!busRouteData) return;
-
-    const busRouteCity = this.cityList.find(
-      city => city._id === busRouteData.cityId
-    );
-
-    if (!busRouteCity) return;
-
-    if (cityId !== busRouteCity._id) {
-      this.router.navigate([], {
-        relativeTo: this.route,
-        queryParams: { cityId: busRouteCity._id },
-      });
-    }
-
-    this.isEditMode = true;
-    this.selectedCity = busRouteCity;
-    this.busRouteForm.setValue({
-      name: busRouteData.name,
-      isActive: busRouteData.isActive ?? true,
-    });
+    // this.isEditMode = true;
+    // this.selectedCity = busRouteCity;
+    // this.busRouteForm.setValue({
+    //   name: busRouteData.name,
+    //   isActive: busRouteData.isActive ?? true,
+    // });
   }
 
   deleteOnClick(busRouteId: string) {
     this.dataService.deleteBusRouteById(busRouteId).then(res => {
       const { status } = res;
+
       if (status === StatusCode.Ok) {
-        this.routeList = this.routeList.filter(
-          route => route._id !== busRouteId
-        );
+        this.routeList.removeById(busRouteId);
+        this._snackBar.open('Deleted', 'Close', {
+          duration: 3000,
+        });
         this.selectedBusRoute = '';
+        this.isCitySelectDisabled = false;
+        this.isEditMode = false;
+        this.busRouteForm.reset({ isActive: true });
       }
     });
   }
@@ -312,28 +308,38 @@ export class BusRouteComponent {
 
   selectCityOnChange(e: MatSelectChange) {
     if (e.value === this.allCity) {
-      getAllBusRoutes(this.dataService, this.routeList);
-
-      this.router.navigate([], {
-        relativeTo: this.route,
-      });
+      this.url.setQueryParams();
       return;
     }
+
     const city = e.value as City;
-    this.dataService.getRoutesByCityId(city._id).then(res => {
-      this.router.navigate([], {
-        relativeTo: this.route,
-        queryParams: { cityId: city._id },
-        queryParamsHandling: 'merge',
-      });
-      if (res.status === StatusCode.Ok && res.data.length) {
-        this.routeList = sortObjArrByProp<BusRoute>(
-          res.data,
-          'name'
-        ) as BusRoute[];
+    this.url.setQueryParams({ cityId: city._id });
+  }
+
+  ngOnInit() {
+    this._sub = this._route.queryParamMap.subscribe(params => {
+      const cityId = params.get('cityId') ?? '';
+
+      if (!cityId || cityId === this.allCity._id) {
+        getAllBusRoutes(this.dataService, this.routeList);
         return;
       }
-      this.routeList = [];
+
+      this.dataService.getRoutesByCityId(cityId).then(res => {
+        const { status, data } = res;
+
+        if (status === StatusCode.Ok && data.length) {
+          // this.routeList.setData(data);
+          this.routeList.setData(data);
+        } else {
+          // this.placeList.setData([]);
+          this.routeList.setData([]);
+        }
+      });
     });
+  }
+
+  ngOnDestroy() {
+    this._sub.unsubscribe();
   }
 }
