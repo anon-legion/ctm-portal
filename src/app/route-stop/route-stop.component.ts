@@ -487,6 +487,18 @@ export class RouteStopComponent implements OnInit, OnDestroy {
         return name ? this._filter(name as string) : [...this.placeOptions];
       })
     );
+
+    // prevent non-numeric characters in distance input
+    const distanceInput = document.querySelector(
+      'input[formControlName="distance"]'
+    );
+    distanceInput?.addEventListener('input', (event: Event) => {
+      const input = event.target as HTMLInputElement;
+      // input.value = input.value.replace(/^[0-9]+(\.[0-9]*)?$/g, '');
+      input.value =
+        input.value.replace(/[^\d.]/g, '').match(/^(\d+)?(\.\d{0,2})?/)?.[0] ||
+        '';
+    });
   }
 
   ngOnDestroy() {
