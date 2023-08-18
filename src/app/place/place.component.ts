@@ -271,8 +271,8 @@ export class PlaceComponent implements OnInit, OnDestroy {
     this.selectedPlace = row._id;
     this.placeForm.setValue({
       name: row.name,
-      aliases: row.aliases ?? [],
-      isActive: row.isActive ?? true,
+      aliases: row.aliases,
+      isActive: row.isActive,
     });
 
     if (cityId !== placeCity?._id) {

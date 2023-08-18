@@ -70,6 +70,7 @@
     <tr
       mat-row
       (click)="rowOnClick(row)"
+      [class.selected]="selectedPlace === row._id"
       *matRowDef="let row; columns: displayedColumns"></tr>
 
     <tr class="mat-row" *matNoDataRow>

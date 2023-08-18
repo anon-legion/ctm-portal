@@ -128,7 +128,7 @@ export class RouteStopComponent implements OnInit, OnDestroy {
           route => route._id === routeId
         );
         const busRouteCity = allCity.find(
-          city => city._id === reqBusRoute?.cityId
+          city => city._id === (reqBusRoute?.cityId as City)?._id
         );
 
         // set query parameters to default 'all' if provided params are invalid
@@ -160,14 +160,14 @@ export class RouteStopComponent implements OnInit, OnDestroy {
         this.cityRouteList = this.allBusRoutes.filter(busRoute =>
           this.selectedCity === this.allCity
             ? true
-            : busRoute.cityId === this.selectedCity._id
+            : (busRoute.cityId as City)._id === this.selectedCity._id
         );
       })
-      .catch(err =>
+      .catch(err => {
         this._snackBar.open(`${err.message}, try again later`, 'Close', {
           duration: 3000,
-        })
-      );
+        });
+      });
   }
 
   get cityList() {
@@ -183,9 +183,10 @@ export class RouteStopComponent implements OnInit, OnDestroy {
       this.cityRouteList = [...this.allBusRoutes];
       return;
     }
+    console.log(this.allBusRoutes);
 
     this.cityRouteList = this.allBusRoutes.filter(
-      busRoute => busRoute.cityId === city._id
+      busRoute => (busRoute.cityId as City)._id === city._id
     );
 
     // if selected route is not in the city, set route to 'all'
