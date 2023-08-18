@@ -226,6 +226,7 @@ export class BusRouteComponent implements OnInit, OnDestroy {
         .updateBusRouteById(this.selectedBusRoute, formData)
         .then(res => {
           const { status, data } = res;
+
           if (status === StatusCode.NotFound) return;
           if (status === StatusCode.Conflict) {
             nameControl.setErrors({ error: 'duplicate' });

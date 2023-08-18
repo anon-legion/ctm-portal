@@ -1,42 +1,40 @@
-import { Component, inject } from '@angular/core';
+import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule, Router } from '@angular/router';
+import { HttpStatusCode as StatusCode } from '@angular/common/http';
 import {
   ReactiveFormsModule,
   FormControl,
   FormGroup,
   Validators,
 } from '@angular/forms';
-import { HttpStatusCode as StatusCode } from '@angular/common/http';
-import { MatIconModule } from '@angular/material/icon';
+import { Router } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
-import { MatInputModule } from '@angular/material/input';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatSlideToggleModule } from '@angular/material/slide-toggle';
-import { MatListModule, MatListOption } from '@angular/material/list';
 import { MatDividerModule } from '@angular/material/divider';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatIconModule } from '@angular/material/icon';
+import { MatInputModule } from '@angular/material/input';
+import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatSnackBarModule, MatSnackBar } from '@angular/material/snack-bar';
-// import { MatTable, MatTableModule } from '@angular/material/table';
+import { MatTableModule } from '@angular/material/table';
 import { DataService } from '../data.service';
+import TableDataSource from '../shared/table-data-source';
+import { toTitleCase } from '../shared/utils';
 import { City } from '../types';
-import { sortObjArrByProp, toTitleCase } from '../shared/utils';
 
 @Component({
   selector: 'app-city',
   standalone: true,
   imports: [
     CommonModule,
-    RouterModule,
-    MatIconModule,
-    MatButtonModule,
     ReactiveFormsModule,
-    MatInputModule,
-    MatFormFieldModule,
-    MatSlideToggleModule,
-    MatListModule,
+    MatButtonModule,
     MatDividerModule,
+    MatFormFieldModule,
+    MatIconModule,
+    MatInputModule,
+    MatSlideToggleModule,
     MatSnackBarModule,
-    // MatTableModule,
+    MatTableModule,
   ],
   template: `
     <form
@@ -74,52 +72,31 @@ import { sortObjArrByProp, toTitleCase } from '../shared/utils';
       </button>
     </form>
 
-    <!-- TODO: add spinner  -->
     <mat-divider class="width-breakpoint-768"></mat-divider>
     <div class="list-container mt-2 width-breakpoint-768">
-      <mat-selection-list
-        #cities
-        [multiple]="false"
-        (selectionChange)="selectionOnChange(cities.selectedOptions.selected)">
-        <mat-list-option
-          *ngFor="let city of cityList"
-          [value]="city._id"
-          [selected]="">
-          {{ city.name }}
-        </mat-list-option>
-      </mat-selection-list>
-      <!-- <table mat-table [dataSource]="cityList">
+      <table mat-table [dataSource]="cityListTd">
         <ng-container matColumnDef="city">
           <th mat-header-cell *matHeaderCellDef>City</th>
           <td mat-cell *matCellDef="let element">{{ element.name }}</td>
         </ng-container>
-
-        <ng-container matColumnDef="is active">
-          <th mat-header-cell *matHeaderCellDef>Is Active</th>
-          <td mat-cell *matCellDef="let element">{{ element.isActive }}</td>
-        </ng-container>
-
         <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
         <tr
           mat-row
           (click)="rowOnClick(row)"
           *matRowDef="let row; columns: displayedColumns"></tr>
-      </table> -->
+        <tr class="mat-row" *matNoDataRow>
+          <td class="mat-cell" colspan="4">Empty</td>
+        </tr>
+      </table>
     </div>
 
     <div
       class="is-flex is-justify-content-space-around mt-4 width-breakpoint-768">
       <button
         mat-raised-button
-        color="accent"
-        class="uniform-button"
-        (click)="editOnClick(selectedCity)">
-        Edit
-      </button>
-      <button
-        mat-raised-button
         color="warn"
         class="uniform-button"
+        [disabled]="!selectedCity"
         (click)="deleteOnClick(selectedCity)">
         Delete
       </button>
@@ -127,6 +104,7 @@ import { sortObjArrByProp, toTitleCase } from '../shared/utils';
         mat-raised-button
         color="accent"
         class="uniform-button"
+        [disabled]="!selectedCity"
         (click)="navigateTo(selectedCity)">
         Add Routes
       </button>
@@ -135,23 +113,30 @@ import { sortObjArrByProp, toTitleCase } from '../shared/utils';
   styleUrls: ['./city.component.scss'],
 })
 export class CityComponent {
-  title = 'CTM Builder';
-  dataService: DataService = inject(DataService);
+  selectedCity: City['_id'] = '';
+  cityListTd = new TableDataSource<City>([]);
+  displayedColumns = ['city'];
+
+  // form properties
+  nameControl = new FormControl('', [
+    Validators.required,
+    Validators.minLength(4),
+  ]);
+  isActiveControl = new FormControl(true, [Validators.required]);
   cityForm = new FormGroup({
-    name: new FormControl('', [Validators.required, Validators.minLength(4)]),
-    isActive: new FormControl(true, [Validators.required]),
+    name: this.nameControl,
+    isActive: this.isActiveControl,
   });
   isEditMode = false;
-  selectedCity = '';
-  displayedColumns: string[] = ['city', 'is active'];
 
   constructor(
-    private router: Router,
-    private _snackBar: MatSnackBar
+    private _snackBar: MatSnackBar,
+    private _router: Router,
+    private dataService: DataService
   ) {
     this.dataService.getAllCities().then(res => {
       if (res.ok) {
-        this.cityList = sortObjArrByProp<City>(res.data, 'name');
+        this.cityListTd.setData(this.cityList);
       }
     });
   }
@@ -160,32 +145,34 @@ export class CityComponent {
     return this.dataService.cityList;
   }
 
-  set cityList(value: City[]) {
-    this.dataService.cityList = value;
-  }
-
   cityFormOnSubmit() {
-    if (!this.cityForm.value.name) return;
+    const nameControl = this.nameControl;
+    if (!nameControl || !nameControl.value) return;
 
     const formData = {
-      name: toTitleCase(this.cityForm.value.name),
+      name: toTitleCase(nameControl.value),
       isActive: this.cityForm.value.isActive,
     } as City;
 
     if (this.isEditMode) {
-      formData._id = this.selectedCity;
       this.dataService.updateCityById(this.selectedCity, formData).then(res => {
         const { status, data } = res;
+
         if (status === StatusCode.NotFound) return;
+        if (status === StatusCode.Conflict) {
+          nameControl.setErrors({ error: 'duplicate' });
+          this._snackBar.open('Name already exists', 'Close', {
+            duration: 3000,
+          });
+          return;
+        }
+
         if (status === StatusCode.Ok) {
           this._snackBar.open('Update success', 'Close', { duration: 3000 });
-          const index = this.cityList.findIndex(
-            city => city._id === this.selectedCity
-          );
-          this.cityList[index] = data;
-          this.cityList = sortObjArrByProp<City>(this.cityList, 'name');
+          this.cityListTd.updateById(data._id, data);
           this.cityForm.reset({ isActive: true });
           this.isEditMode = false;
+          this.selectedCity = '';
         }
       });
       return;
@@ -193,56 +180,59 @@ export class CityComponent {
 
     this.dataService.addNewCity(formData).then(res => {
       const { status, data } = res;
-      const control = this.cityForm.get('name');
-      if (status === StatusCode.Conflict && control) {
-        control.setErrors({ error: 'duplicate' });
+
+      if (status === StatusCode.Conflict) {
+        nameControl.setErrors({ error: 'duplicate' });
+        this._snackBar.open('Name already exists', 'Close', {
+          duration: 3000,
+        });
         return;
       }
+
       if (status === StatusCode.Created) {
         this._snackBar.open('New city added', 'Close', { duration: 3000 });
-        this.cityList.push(data);
-        this.cityList = sortObjArrByProp<City>(this.cityList, 'name');
+        this.cityListTd.push(data);
         this.cityForm.reset({ isActive: true });
       }
     });
   }
 
-  selectionOnChange(selectedOptions: MatListOption[]) {
-    const [selectedOption] = selectedOptions;
-    this.selectedCity = selectedOption.value;
-  }
-
   deleteOnClick(cityId: string) {
     this.dataService.deleteCityById(cityId).then(res => {
       const { status } = res;
+
       if (status === StatusCode.Ok) {
-        this.cityList = this.cityList.filter(city => city._id !== cityId);
+        this.cityListTd.removeById(cityId);
+        this._snackBar.open('Deleted', 'Close', {
+          duration: 3000,
+        });
         this.selectedCity = '';
+        this.isEditMode = false;
       }
     });
   }
 
-  editOnClick(cityId: string) {
-    const cityData = this.cityList.find(city => city._id === cityId);
-    if (!cityData) return;
+  rowOnClick(row: City) {
+    console.log(row);
+    if (row._id === this.selectedCity) {
+      this.cityForm.reset({ isActive: true });
+      this.isEditMode = false;
+      this.selectedCity = '';
+      return;
+    }
+
     this.isEditMode = true;
+    this.selectedCity = row._id;
     this.cityForm.setValue({
-      name: cityData.name,
-      isActive: cityData.isActive ?? true,
+      name: row.name,
+      isActive: row.isActive,
     });
   }
 
-  navigateTo(route: string) {
-    this.router.navigate(['bus-routes'], {
-      queryParams: { cityId: route },
+  navigateTo(cityId: string) {
+    this._router.navigate(['bus-routes'], {
+      queryParams: { cityId },
       queryParamsHandling: 'merge',
     });
   }
-
-  // rowOnClick(row: City) {
-  //   this.cityForm.setValue({
-  //     name: row.name,
-  //     isActive: row.isActive ?? true,
-  //   });
-  // }
 }
