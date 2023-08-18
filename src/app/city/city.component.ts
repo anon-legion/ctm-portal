@@ -168,6 +168,7 @@ export class CityComponent {
         }
 
         if (status === StatusCode.Ok) {
+          console.log(data);
           this._snackBar.open('Update success', 'Close', { duration: 3000 });
           this.cityListTd.updateById(data._id, data);
           this.cityForm.reset({ isActive: true });
@@ -208,12 +209,12 @@ export class CityComponent {
         });
         this.selectedCity = '';
         this.isEditMode = false;
+        this.cityForm.reset({ isActive: true });
       }
     });
   }
 
   rowOnClick(row: City) {
-    console.log(row);
     if (row._id === this.selectedCity) {
       this.cityForm.reset({ isActive: true });
       this.isEditMode = false;
