@@ -83,6 +83,7 @@ import { City } from '../types';
         <tr
           mat-row
           (click)="rowOnClick(row)"
+          [class.selected]="selectedCity === row._id"
           *matRowDef="let row; columns: displayedColumns"></tr>
         <tr class="mat-row" *matNoDataRow>
           <td class="mat-cell" colspan="4">Empty</td>

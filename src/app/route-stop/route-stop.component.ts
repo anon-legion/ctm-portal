@@ -33,6 +33,22 @@ import {
   Place,
 } from '../types';
 
+function nameControlSetter(
+  placeOptions: PlaceTd[],
+  nameControl: FormControl,
+  placeId: Place['_id']
+) {
+  const selectedPlace = placeOptions.find(place => place._id === placeId);
+  // trigger autocomplete to update options
+  nameControl.setValue(' ');
+
+  if (selectedPlace) {
+    nameControl.setValue(selectedPlace);
+    return;
+  }
+  nameControl.setValue('');
+}
+
 @Component({
   selector: 'app-route-stop',
   standalone: true,
@@ -411,6 +427,7 @@ export class RouteStopComponent implements OnInit, OnDestroy {
     this._sub = this._route.queryParamMap.subscribe(params => {
       const cityId = params.get('cityId') ?? '';
       const routeId = params.get('routeId') ?? '';
+      const placeId = params.get('placeId') ?? '';
 
       if (cityId === this.allCity._id && cityId !== this._lastCityId) {
         this.dataService.getAllPlaces().then(res => {
@@ -422,9 +439,8 @@ export class RouteStopComponent implements OnInit, OnDestroy {
           } else {
             this.placeOptions = data;
           }
-          // trigger autocomplete to update options
-          this.nameControl.setValue(' ');
-          this.nameControl.setValue('');
+
+          nameControlSetter(this.placeOptions, this.nameControl, placeId);
         });
       }
 
@@ -442,9 +458,8 @@ export class RouteStopComponent implements OnInit, OnDestroy {
           } else {
             this.placeOptions = data;
           }
-          // trigger autocomplete to update options
-          this.nameControl.setValue(' ');
-          this.nameControl.setValue('');
+
+          nameControlSetter(this.placeOptions, this.nameControl, placeId);
         });
       }
 

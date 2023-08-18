@@ -211,7 +211,13 @@ export class PlaceComponent implements OnInit, OnDestroy {
   }
 
   navigateTo(placeId: string) {
-    console.log(placeId);
+    this._router.navigate(['route-stops'], {
+      queryParams: {
+        placeId,
+        cityId: this.selectedCity._id,
+      },
+      queryParamsHandling: 'merge',
+    });
   }
 
   selectCityOnChange(e: MatSelectChange) {

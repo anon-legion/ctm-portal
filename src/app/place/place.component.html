@@ -92,8 +92,8 @@
     mat-raised-button
     color="accent"
     class="uniform-button"
-    disabled
+    [disabled]="!selectedPlace"
     (click)="navigateTo(selectedPlace)">
-    Add Stops
+    Set Stops
   </button>
 </div>
