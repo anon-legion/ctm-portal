@@ -18,6 +18,7 @@ import { MatSnackBarModule, MatSnackBar } from '@angular/material/snack-bar';
 import { MatTableModule } from '@angular/material/table';
 import { DataService } from '../data.service';
 import TableDataSource from '../shared/table-data-source';
+import download from '../shared/download';
 import { toTitleCase } from '../shared/utils';
 import { City } from '../types';
 
@@ -106,7 +107,7 @@ import { City } from '../types';
         color="accent"
         class="uniform-button"
         tabindex="0"
-        (click)="addDownloadOnClick(selectedCity)">
+        (click)="addOrDlOnClick(selectedCity)">
         {{ isEditMode ? 'Add Routes' : 'Download' }}
       </button>
     </div>
@@ -146,6 +147,30 @@ export class CityComponent {
     return this.dataService.cityList;
   }
 
+  editCity(cityId: City['_id'], data: City, nameControl: FormControl) {
+    this.dataService.updateCityById(cityId, data).then(res => {
+      const { status, data } = res;
+
+      if (status === StatusCode.NotFound) return;
+      if (status === StatusCode.Conflict) {
+        nameControl.setErrors({ error: 'duplicate' });
+        this._snackBar.open('Name already exists', 'Close', {
+          duration: 3000,
+        });
+        return;
+      }
+
+      if (status === StatusCode.Ok) {
+        console.log(data);
+        this._snackBar.open('Update success', 'Close', { duration: 3000 });
+        this.cityListTd.updateById(data._id, data);
+        this.cityForm.reset({ isActive: true });
+        this.isEditMode = false;
+        this.selectedCity = '';
+      }
+    });
+  }
+
   cityFormOnSubmit() {
     const nameControl = this.nameControl;
     if (!nameControl || !nameControl.value) return;
@@ -156,27 +181,7 @@ export class CityComponent {
     } as City;
 
     if (this.isEditMode) {
-      this.dataService.updateCityById(this.selectedCity, formData).then(res => {
-        const { status, data } = res;
-
-        if (status === StatusCode.NotFound) return;
-        if (status === StatusCode.Conflict) {
-          nameControl.setErrors({ error: 'duplicate' });
-          this._snackBar.open('Name already exists', 'Close', {
-            duration: 3000,
-          });
-          return;
-        }
-
-        if (status === StatusCode.Ok) {
-          console.log(data);
-          this._snackBar.open('Update success', 'Close', { duration: 3000 });
-          this.cityListTd.updateById(data._id, data);
-          this.cityForm.reset({ isActive: true });
-          this.isEditMode = false;
-          this.selectedCity = '';
-        }
-      });
+      this.editCity(this.selectedCity, formData, nameControl);
       return;
     }
 
@@ -238,24 +243,12 @@ export class CityComponent {
     });
   }
 
-  downloadOnClick() {
-    const json = JSON.stringify(this.cityList);
-    const blob = new Blob([json], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const downloadLink = document.createElement('a');
-    downloadLink.href = url;
-    downloadLink.download = 'cities.json';
-    downloadLink.style.display = 'none';
-    document.body.appendChild(downloadLink);
-    downloadLink.click();
-    document.body.removeChild(downloadLink);
-  }
-
-  addDownloadOnClick(cityId: string) {
+  addOrDlOnClick(cityId: string) {
     if (this.isEditMode) {
       this.navigateTo(cityId);
       return;
     }
-    this.downloadOnClick();
+
+    download(this.cityList, 'cities');
   }
 }
