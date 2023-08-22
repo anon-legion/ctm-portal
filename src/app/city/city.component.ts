@@ -105,9 +105,9 @@ import { City } from '../types';
         mat-raised-button
         color="accent"
         class="uniform-button"
-        [disabled]="!selectedCity"
-        (click)="navigateTo(selectedCity)">
-        Add Routes
+        tabindex="0"
+        (click)="addDownloadOnClick(selectedCity)">
+        {{ isEditMode ? 'Add Routes' : 'Download' }}
       </button>
     </div>
   `,
@@ -236,5 +236,26 @@ export class CityComponent {
       queryParams: { cityId },
       queryParamsHandling: 'merge',
     });
+  }
+
+  downloadOnClick() {
+    const json = JSON.stringify(this.cityList);
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const downloadLink = document.createElement('a');
+    downloadLink.href = url;
+    downloadLink.download = 'cities.json';
+    downloadLink.style.display = 'none';
+    document.body.appendChild(downloadLink);
+    downloadLink.click();
+    document.body.removeChild(downloadLink);
+  }
+
+  addDownloadOnClick(cityId: string) {
+    if (this.isEditMode) {
+      this.navigateTo(cityId);
+      return;
+    }
+    this.downloadOnClick();
   }
 }
