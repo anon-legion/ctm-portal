@@ -92,8 +92,7 @@
     mat-raised-button
     color="accent"
     class="uniform-button"
-    [disabled]="!selectedPlace"
-    (click)="navigateTo(selectedPlace)">
-    Set Stops
+    (click)="setOrDlOnClick(selectedPlace)">
+    {{ isEditMode ? 'Set Stops' : 'Download' }}
   </button>
 </div>

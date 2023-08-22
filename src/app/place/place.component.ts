@@ -20,6 +20,7 @@ import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatSnackBarModule, MatSnackBar } from '@angular/material/snack-bar';
 import { MatTableModule } from '@angular/material/table';
 import { DataService } from '../data.service';
+import download from '../shared/download';
 import PathQuerySetter from '../shared/path-query-setter';
 import TableDataSource from '../shared/table-data-source';
 import { toTitleCase } from '../shared/utils';
@@ -210,16 +211,6 @@ export class PlaceComponent implements OnInit, OnDestroy {
     });
   }
 
-  navigateTo(placeId: string) {
-    this._router.navigate(['route-stops'], {
-      queryParams: {
-        placeId,
-        cityId: this.selectedCity._id,
-      },
-      queryParamsHandling: 'merge',
-    });
-  }
-
   selectCityOnChange(e: MatSelectChange) {
     if (e.value === this.allCity) {
       this.url.setQueryParams();
@@ -286,6 +277,25 @@ export class PlaceComponent implements OnInit, OnDestroy {
       return;
     }
     this.url.setQueryParams({ placeId: row._id });
+  }
+
+  navigateTo(placeId: string) {
+    this._router.navigate(['route-stops'], {
+      queryParams: {
+        placeId,
+        cityId: this.selectedCity._id,
+      },
+      queryParamsHandling: 'merge',
+    });
+  }
+
+  setOrDlOnClick(placeId: string) {
+    if (this.isEditMode) {
+      this.navigateTo(placeId);
+      return;
+    }
+
+    download(this.placeList.value, 'places');
   }
 
   ngOnInit() {

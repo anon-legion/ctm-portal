@@ -1,6 +1,4 @@
-import { City, BusRoute } from '../types';
-
-function download<T extends City | BusRoute>(data: T[], fileName: string) {
+function download<T>(data: T[], fileName: string) {
   const json = JSON.stringify(data);
   const blob = new Blob([json], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
