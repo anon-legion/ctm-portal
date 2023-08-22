@@ -17,8 +17,8 @@ import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatSnackBarModule, MatSnackBar } from '@angular/material/snack-bar';
 import { MatTableModule } from '@angular/material/table';
 import { DataService } from '../data.service';
-import TableDataSource from '../shared/table-data-source';
 import download from '../shared/download';
+import TableDataSource from '../shared/table-data-source';
 import { toTitleCase } from '../shared/utils';
 import { City } from '../types';
 
@@ -106,7 +106,6 @@ import { City } from '../types';
         mat-raised-button
         color="accent"
         class="uniform-button"
-        tabindex="0"
         (click)="addOrDlOnClick(selectedCity)">
         {{ isEditMode ? 'Add Routes' : 'Download' }}
       </button>

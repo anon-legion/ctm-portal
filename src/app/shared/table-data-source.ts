@@ -23,6 +23,10 @@ class TableDataSource<
     this.setData(initialData);
   }
 
+  get value() {
+    return this._dataStream.getValue();
+  }
+
   get length() {
     return this._dataStream.getValue().length;
   }

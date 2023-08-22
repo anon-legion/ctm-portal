@@ -19,6 +19,7 @@ import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatSnackBarModule, MatSnackBar } from '@angular/material/snack-bar';
 import { MatTableModule } from '@angular/material/table';
 import { DataService } from '../data.service';
+import download from '../shared/download';
 import PathQuerySetter from '../shared/path-query-setter';
 import TableDataSource from '../shared/table-data-source';
 import { toTitleCase } from '../shared/utils';
@@ -133,9 +134,8 @@ function getAllBusRoutes(
         mat-raised-button
         color="accent"
         class="uniform-button"
-        [disabled]="!selectedBusRoute"
-        (click)="navigateTo(selectedBusRoute)">
-        Add Stops
+        (click)="addOrDlOnClick(selectedBusRoute)">
+        {{ isEditMode ? 'Add Stops' : 'Download' }}
       </button>
     </div>
   `,
@@ -150,7 +150,6 @@ export class BusRouteComponent implements OnInit, OnDestroy {
   };
   selectedCity = this.allCity;
   selectedBusRoute: BusRoute['_id'] = '';
-  // routeList: BusRoute[] = [];
   routeList = new TableDataSource<BusRoute>([]);
   displayedColumns = ['name', 'cityId'];
   url: PathQuerySetter;
@@ -319,6 +318,16 @@ export class BusRouteComponent implements OnInit, OnDestroy {
     });
   }
 
+  selectCityOnChange(e: MatSelectChange) {
+    if (e.value === this.allCity) {
+      this.url.setQueryParams();
+      return;
+    }
+
+    const city = e.value as City;
+    this.url.setQueryParams({ cityId: city._id });
+  }
+
   navigateTo(busRouteId: string) {
     this._router.navigate(['route-stops'], {
       queryParams: {
@@ -328,14 +337,13 @@ export class BusRouteComponent implements OnInit, OnDestroy {
     });
   }
 
-  selectCityOnChange(e: MatSelectChange) {
-    if (e.value === this.allCity) {
-      this.url.setQueryParams();
+  addOrDlOnClick(busRouteId: string) {
+    if (this.isEditMode) {
+      this.navigateTo(busRouteId);
       return;
     }
 
-    const city = e.value as City;
-    this.url.setQueryParams({ cityId: city._id });
+    download(this.routeList.value, 'routes');
   }
 
   ngOnInit() {
