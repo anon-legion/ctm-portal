@@ -204,6 +204,34 @@ export class BusRouteComponent implements OnInit, OnDestroy {
     return this.dataService.cityList;
   }
 
+  editBusRoute(
+    routeId: BusRoute['_id'],
+    data: BusRoute,
+    nameControl: FormControl
+  ) {
+    this.dataService.updateBusRouteById(routeId, data).then(res => {
+      const { status, data } = res;
+
+      if (status === StatusCode.NotFound) return;
+      if (status === StatusCode.Conflict) {
+        nameControl.setErrors({ error: 'duplicate' });
+        this._snackBar.open('Name already exists', 'Close', {
+          duration: 3000,
+        });
+        return;
+      }
+
+      if (status === StatusCode.Ok) {
+        this._snackBar.open('Update success', 'Close', { duration: 3000 });
+        this.routeList.updateById(data._id, data);
+        this.busRouteForm.reset({ isActive: true });
+        this.isCitySelectDisabled = false;
+        this.isEditMode = false;
+        this.selectedBusRoute = '';
+      }
+    });
+  }
+
   busRouteFormOnSubmit() {
     const nameControl = this.nameControl;
     if (!nameControl || !nameControl.value) return;
@@ -221,29 +249,7 @@ export class BusRouteComponent implements OnInit, OnDestroy {
     } as BusRoute;
 
     if (this.isEditMode) {
-      this.dataService
-        .updateBusRouteById(this.selectedBusRoute, formData)
-        .then(res => {
-          const { status, data } = res;
-
-          if (status === StatusCode.NotFound) return;
-          if (status === StatusCode.Conflict) {
-            nameControl.setErrors({ error: 'duplicate' });
-            this._snackBar.open('Name already exists', 'Close', {
-              duration: 3000,
-            });
-            return;
-          }
-
-          if (status === StatusCode.Ok) {
-            this._snackBar.open('Update success', 'Close', { duration: 3000 });
-            this.routeList.updateById(data._id, data);
-            this.busRouteForm.reset({ isActive: true });
-            this.isCitySelectDisabled = false;
-            this.isEditMode = false;
-            this.selectedBusRoute = '';
-          }
-        });
+      this.editBusRoute(this.selectedBusRoute, formData, nameControl);
       return;
     }
 
@@ -295,10 +301,7 @@ export class BusRouteComponent implements OnInit, OnDestroy {
 
     if (cityId !== routeCity?._id) {
       this.url.setQueryParams({ cityId: routeCity?._id });
-      // return
     }
-
-    // this.url.setQueryParams({ routeId: row._id })
   }
 
   deleteOnClick(busRouteId: string) {
