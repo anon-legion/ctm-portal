@@ -206,7 +206,7 @@ export class BusRouteComponent implements OnInit, OnDestroy {
   setEditMode(
     isEditMode: boolean,
     selectedBusRoute: BusRoute['_id'] = '',
-    formVals: Record<string, boolean | string | string[]> = { isActive: true }
+    formVals: Record<string, boolean | string> = { isActive: true }
   ) {
     this.isEditMode = isEditMode;
     this.selectedBusRoute = selectedBusRoute;

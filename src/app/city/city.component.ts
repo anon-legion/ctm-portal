@@ -146,6 +146,16 @@ export class CityComponent {
     return this.dataService.cityList;
   }
 
+  setEditMode(
+    isEditMode: boolean,
+    selectedCity: City['_id'] = '',
+    formVals: Record<string, boolean | string> = { isActive: true }
+  ) {
+    this.isEditMode = isEditMode;
+    this.selectedCity = selectedCity;
+    this.cityForm.reset(formVals);
+  }
+
   editCity(cityId: City['_id'], data: City, nameControl: FormControl) {
     this.dataService.updateCityById(cityId, data).then(res => {
       const { status, data } = res;
@@ -163,28 +173,13 @@ export class CityComponent {
         console.log(data);
         this._snackBar.open('Update success', 'Close', { duration: 3000 });
         this.cityListTd.updateById(data._id, data);
-        this.cityForm.reset({ isActive: true });
-        this.isEditMode = false;
-        this.selectedCity = '';
+        this.setEditMode(false);
       }
     });
   }
 
-  cityFormOnSubmit() {
-    const nameControl = this.nameControl;
-    if (!nameControl || !nameControl.value) return;
-
-    const formData = {
-      name: toTitleCase(nameControl.value),
-      isActive: this.cityForm.value.isActive,
-    } as City;
-
-    if (this.isEditMode) {
-      this.editCity(this.selectedCity, formData, nameControl);
-      return;
-    }
-
-    this.dataService.addNewCity(formData).then(res => {
+  addCity(data: City, nameControl: FormControl) {
+    this.dataService.addNewCity(data).then(res => {
       const { status, data } = res;
 
       if (status === StatusCode.Conflict) {
@@ -203,6 +198,25 @@ export class CityComponent {
     });
   }
 
+  cityFormOnSubmit() {
+    const nameControl = this.nameControl;
+    if (!nameControl || !nameControl.value) return;
+
+    const formData = {
+      name: toTitleCase(nameControl.value),
+      isActive: this.cityForm.value.isActive,
+    } as City;
+
+    // update city
+    if (this.isEditMode) {
+      this.editCity(this.selectedCity, formData, nameControl);
+      return;
+    }
+
+    // add new city
+    this.addCity(formData, nameControl);
+  }
+
   deleteOnClick(cityId: string) {
     this.dataService.deleteCityById(cityId).then(res => {
       const { status } = res;
@@ -212,24 +226,18 @@ export class CityComponent {
         this._snackBar.open('Deleted', 'Close', {
           duration: 3000,
         });
-        this.selectedCity = '';
-        this.isEditMode = false;
-        this.cityForm.reset({ isActive: true });
+        this.setEditMode(false);
       }
     });
   }
 
   rowOnClick(row: City) {
     if (row._id === this.selectedCity) {
-      this.cityForm.reset({ isActive: true });
-      this.isEditMode = false;
-      this.selectedCity = '';
+      this.setEditMode(false);
       return;
     }
 
-    this.isEditMode = true;
-    this.selectedCity = row._id;
-    this.cityForm.setValue({
+    this.setEditMode(true, row._id, {
       name: row.name,
       isActive: row.isActive,
     });

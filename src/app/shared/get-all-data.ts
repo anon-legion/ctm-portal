@@ -28,3 +28,5 @@ function getAllData<T extends PlaceTd | BusRoute>(
     });
   }
 }
+
+export default getAllData;
