@@ -6,7 +6,7 @@
     <mat-select
       [(value)]="selectedCity"
       (selectionChange)="selectCityOnChange($event)"
-      [disabled]="isCitySelectDisabled">
+      [disabled]="isEditMode">
       <mat-option [value]="allCity">All Cities</mat-option>
       <mat-option *ngFor="let city of cityList" [value]="city">
         {{ city.name }}
@@ -109,15 +109,15 @@
     mat-raised-button
     color="warn"
     class="uniform-button"
-    [disabled]="!editRouteStop"
-    (click)="deleteOnClick(editRouteStop)">
+    [disabled]="!selectedRouteStop"
+    (click)="deleteOnClick(selectedRouteStop)">
     Delete
   </button>
   <button
     mat-raised-button
     color="accent"
     class="uniform-button"
-    [disabled]="!editRouteStop"
+    [disabled]="!selectedRouteStop"
     (click)="navigateTo()">
     Edit Place
   </button>

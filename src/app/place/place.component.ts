@@ -183,6 +183,7 @@ export class PlaceComponent implements OnInit, OnDestroy {
 
   placeFormOnSubmit() {
     const nameControl = this.nameControl;
+
     if (!nameControl || !nameControl.value) return;
     if (this.selectedCity === this.allCity) {
       this._snackBar.open('Please select a city', 'Close', { duration: 3000 });

@@ -260,6 +260,7 @@ export class BusRouteComponent implements OnInit, OnDestroy {
 
   busRouteFormOnSubmit() {
     const nameControl = this.nameControl;
+
     if (!nameControl || !nameControl.value) return;
     if (this.selectedCity === this.allCity) {
       this._snackBar.open('Please select a city', 'Close', {

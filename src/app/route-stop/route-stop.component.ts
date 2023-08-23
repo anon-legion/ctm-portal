@@ -92,7 +92,7 @@ export class RouteStopComponent implements OnInit, OnDestroy {
   allBusRoutes: BusRoute[] = [];
   cityRouteList: BusRoute[] = [];
   routeStopList = new TableDataSource<RouteStopTd>([]);
-  editRouteStop: RouteStopTd['_id'] = '';
+  selectedRouteStop: RouteStopTd['_id'] = '';
   placeOptions: PlaceTd[] = [];
   filteredPlaceOptions: Observable<PlaceTd[]> = new Observable();
   displayedColumns = ['name', 'distance', 'cityId'];
@@ -113,7 +113,6 @@ export class RouteStopComponent implements OnInit, OnDestroy {
     distance: this.distanceControl,
     isActive: this.isActiveControl,
   });
-  isCitySelectDisabled = false;
   isEditMode = false;
 
   constructor(
@@ -199,7 +198,6 @@ export class RouteStopComponent implements OnInit, OnDestroy {
       this.cityRouteList = [...this.allBusRoutes];
       return;
     }
-    console.log(this.allBusRoutes);
 
     this.cityRouteList = this.allBusRoutes.filter(
       busRoute => (busRoute.cityId as City)._id === city._id
@@ -217,9 +215,89 @@ export class RouteStopComponent implements OnInit, OnDestroy {
     this.url.setQueryParams({ routeId: busRoute._id });
   }
 
+  setEditMode(
+    isEditMode: boolean,
+    editRouteStop: RouteStop['_id'] = '',
+    formVals: Record<string, boolean | string | number | PlaceTd> = {
+      isActive: true,
+    },
+    nameControl = this.nameControl
+  ) {
+    this.isEditMode = isEditMode;
+    this.selectedRouteStop = editRouteStop;
+
+    if (!isEditMode) {
+      nameControl.enable();
+      this.routeStopForm.reset(formVals);
+      return;
+    }
+
+    nameControl.disable();
+    setTimeout(() => {
+      this.routeStopForm.reset(formVals);
+    }, 300);
+  }
+
+  editRouteStop(selectedRouteStop: RouteStop['_id'], data: RouteStop) {
+    this.dataService.updateRouteStopById(selectedRouteStop, data).then(res => {
+      const { status, data } = res;
+
+      if (status === StatusCode.NotFound) return;
+
+      if (status === StatusCode.Ok) {
+        this._snackBar.open('Success', 'Close', { duration: 3000 });
+        this.routeStopList.updateById(data._id, data);
+        this.setEditMode(false);
+        return;
+      }
+    });
+  }
+
+  addRouteStop(data: RouteStop) {
+    this.dataService.addNewRouteStop(data).then(res => {
+      const { status, data } = res;
+
+      if (status === StatusCode.Created) {
+        this._snackBar.open('Success', 'Close', { duration: 3000 });
+        this.routeStopList.push(data);
+        this.routeStopForm.reset({ isActive: true });
+        return;
+      }
+    });
+  }
+
+  addNewPlaceAsRouteStop(
+    placeData: Place,
+    formData: Record<string, string | number | boolean>,
+    nameControl: FormControl
+  ) {
+    this.dataService.addNewPlace(placeData).then(placeRes => {
+      const { status, data } = placeRes;
+
+      if (status === StatusCode.Conflict) {
+        nameControl.setErrors({ conflict: true });
+        this._snackBar.open('Name already exists', 'Close', {
+          duration: 3000,
+        });
+        return;
+      }
+
+      if (status !== StatusCode.Created) {
+        this._snackBar.open('Something went wrong', 'Close', {
+          duration: 3000,
+        });
+        return;
+      }
+
+      this.placeOptions.push(data);
+      const routeStopData = { ...formData, placeId: data._id } as RouteStop;
+      this.addRouteStop(routeStopData);
+    });
+  }
+
   routeStopFormOnSubmit() {
-    const nameControl = this.routeStopForm.get('name');
-    const distanceControl = this.routeStopForm.get('distance');
+    const nameControl = this.nameControl;
+    const distanceControl = this.distanceControl;
 
     if (
       !nameControl ||
@@ -239,113 +317,46 @@ export class RouteStopComponent implements OnInit, OnDestroy {
 
     const name = nameControl.value;
     const distance = Number(distanceControl.value);
+    const formData = {
+      routeId: this.selectedRoute._id,
+      distance,
+      isActive: this.isActiveControl.value ?? true,
+    };
 
     if (this.isEditMode) {
       const place = name as PlaceTd;
-      const formData = {
-        routeId: this.selectedRoute._id,
-        placeId: place._id,
-        distance,
-        isActive: this.isActiveControl.value,
-      } as RouteStop;
+      const routeStopData = { ...formData, placeId: place._id } as RouteStop;
 
-      this.dataService
-        .updateRouteStopById(this.editRouteStop, formData)
-        .then(res => {
-          const { status, data } = res;
-
-          if (status === StatusCode.Ok) {
-            this._snackBar.open('Success', 'Close', { duration: 3000 });
-            this.routeStopList.updateById(data._id, data);
-            this.routeStopForm.reset({ isActive: true });
-            nameControl.enable();
-            this.isCitySelectDisabled = false;
-            this.isEditMode = false;
-            this.editRouteStop = '';
-            return;
-          }
-        });
+      this.editRouteStop(this.selectedRouteStop, routeStopData);
       return;
-    }
-
-    if (typeof name === 'string') {
-      const formData = {
-        cityId: this.selectedCity._id,
-        name: toTitleCase(name),
-        isActive: this.isActiveControl.value,
-      };
-
-      this.dataService.addNewPlace(formData as Place).then(placeRes => {
-        const { status, data } = placeRes;
-
-        if (status === StatusCode.Conflict) {
-          nameControl.setErrors({ conflict: true });
-          this._snackBar.open('Name already exists', 'Close', {
-            duration: 3000,
-          });
-          return;
-        }
-
-        if (status !== StatusCode.Created) {
-          this._snackBar.open('Something went wrong', 'Close', {
-            duration: 3000,
-          });
-          return;
-        }
-
-        this.dataService
-          .addNewRouteStop({
-            routeId: this.selectedRoute._id,
-            placeId: data._id,
-            distance,
-            isActive: this.isActiveControl.value,
-          } as RouteStop)
-          .then(routeStopRes => {
-            const { status, data } = routeStopRes;
-
-            if (status === StatusCode.Created) {
-              this._snackBar.open('Success', 'Close', { duration: 3000 });
-              this.routeStopList.push(data);
-              this.routeStopForm.reset({ isActive: true });
-              return;
-            }
-          });
-      });
     }
 
     if (typeof name === 'object') {
       const place = name as PlaceTd;
-      const formData = {
-        routeId: this.selectedRoute._id,
-        placeId: place._id,
-        distance,
+      const routeStopData = { ...formData, placeId: place._id } as RouteStop;
+
+      this.addRouteStop(routeStopData);
+      return;
+    }
+
+    if (typeof name === 'string') {
+      const placeData = {
+        cityId: this.selectedCity._id,
+        name: toTitleCase(name),
         isActive: this.isActiveControl.value,
-      };
+      } as Place;
 
-      this.dataService.addNewRouteStop(formData as RouteStop).then(res => {
-        const { status, data } = res;
-
-        if (status === StatusCode.Created) {
-          this._snackBar.open('Success', 'Close', { duration: 3000 });
-          this.routeStopList.push(data);
-          this.routeStopForm.reset({ isActive: true });
-          return;
-        }
-      });
+      this.addNewPlaceAsRouteStop(placeData, formData, nameControl);
     }
   }
 
   rowOnClick(row: RouteStopTd) {
-    const nameControl = this.routeStopForm.get('name');
+    // const nameControl = this.routeStopForm.get('name');
     const rowId = row._id;
 
     // deselect row if already selected
-    if (rowId === this.editRouteStop) {
-      this.routeStopForm.reset({ isActive: true });
-      nameControl?.enable();
-      this.isCitySelectDisabled = false;
-      this.isEditMode = false;
-      this.editRouteStop = '';
+    if (rowId === this.selectedRouteStop) {
+      this.setEditMode(false);
       return;
     }
 
@@ -375,21 +386,15 @@ export class RouteStopComponent implements OnInit, OnDestroy {
       cityId: reqCity?._id ?? this.allCity._id,
       routeId: reqBusRoute?._id ?? this.allRoute._id,
     });
-    this.isEditMode = true;
-    nameControl?.disable();
-    this.isCitySelectDisabled = true;
-    this.editRouteStop = rowId;
-    setTimeout(() => {
-      this.routeStopForm.setValue({
-        name: selectedPlace ?? null,
-        distance: row.distance,
-        isActive: row.isActive,
-      });
-    }, 400);
+    this.setEditMode(true, rowId, {
+      name: selectedPlace ?? '',
+      distance: row.distance,
+      isActive: row.isActive,
+    });
   }
 
   deleteOnClick(placeId: RouteStop['_id']) {
-    const nameControl = this.routeStopForm.get('name');
+    // const nameControl = this.routeStopForm.get('name');
     this.dataService.deleteRouteStopById(placeId).then(res => {
       const { status } = res;
 
@@ -398,17 +403,13 @@ export class RouteStopComponent implements OnInit, OnDestroy {
         this._snackBar.open('Deleted', 'Close', {
           duration: 3000,
         });
-        this.routeStopForm.reset({ isActive: true });
-        nameControl?.enable();
-        this.isCitySelectDisabled = false;
-        this.isEditMode = false;
-        this.editRouteStop = '';
+        this.setEditMode(false);
       }
     });
   }
 
   navigateTo() {
-    const routeStop = this.routeStopList.findById(this.editRouteStop);
+    const routeStop = this.routeStopList.findById(this.selectedRouteStop);
     this._router.navigate(['places'], {
       queryParams: {
         cityId: this.selectedCity._id,

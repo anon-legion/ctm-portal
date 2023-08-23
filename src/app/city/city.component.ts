@@ -170,7 +170,6 @@ export class CityComponent {
       }
 
       if (status === StatusCode.Ok) {
-        console.log(data);
         this._snackBar.open('Update success', 'Close', { duration: 3000 });
         this.cityListTd.updateById(data._id, data);
         this.setEditMode(false);
@@ -200,6 +199,7 @@ export class CityComponent {
 
   cityFormOnSubmit() {
     const nameControl = this.nameControl;
+
     if (!nameControl || !nameControl.value) return;
 
     const formData = {
