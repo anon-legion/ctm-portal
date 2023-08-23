@@ -84,7 +84,6 @@ export class PlaceComponent implements OnInit, OnDestroy {
     aliases: this.aliasControl,
     isActive: this.isActiveControl,
   });
-  isCitySelectDisabled = false;
   isEditMode = false;
 
   constructor(
@@ -126,6 +125,29 @@ export class PlaceComponent implements OnInit, OnDestroy {
     return this.dataService.cityList;
   }
 
+  editPlace(placeId: Place['_id'], data: Place, nameControl: FormControl) {
+    this.dataService.updatePlaceById(placeId, data).then(res => {
+      const { status, data } = res;
+
+      if (status === StatusCode.NotFound) return;
+      if (status === StatusCode.Conflict) {
+        nameControl.setErrors({ error: 'duplicate' });
+        this._snackBar.open('Name already exists', 'Close', {
+          duration: 3000,
+        });
+        return;
+      }
+
+      if (status === StatusCode.Ok) {
+        this._snackBar.open('Update success', 'Close', { duration: 3000 });
+        this.placeList.updateById(data._id, data);
+        this.placeForm.reset({ isActive: true });
+        this.isEditMode = false;
+        this.selectedPlace = '';
+      }
+    });
+  }
+
   placeFormOnSubmit() {
     const nameControl = this.nameControl;
     if (!nameControl || !nameControl.value) return;
@@ -143,29 +165,7 @@ export class PlaceComponent implements OnInit, OnDestroy {
 
     // update place
     if (this.isEditMode) {
-      this.dataService
-        .updatePlaceById(this.selectedPlace, formData)
-        .then(res => {
-          const { status, data } = res;
-
-          if (status === StatusCode.NotFound) return;
-          if (status === StatusCode.Conflict) {
-            nameControl.setErrors({ error: 'duplicate' });
-            this._snackBar.open('Name already exists', 'Close', {
-              duration: 3000,
-            });
-            return;
-          }
-
-          if (status === StatusCode.Ok) {
-            this._snackBar.open('Update success', 'Close', { duration: 3000 });
-            this.placeList.updateById(data._id, data);
-            this.placeForm.reset({ isActive: true });
-            this.isCitySelectDisabled = false;
-            this.isEditMode = false;
-            this.selectedPlace = '';
-          }
-        });
+      this.editPlace(this.selectedPlace, formData, nameControl);
       return;
     }
 
@@ -203,10 +203,9 @@ export class PlaceComponent implements OnInit, OnDestroy {
         this._snackBar.open('Deleted', 'Close', {
           duration: 3000,
         });
-        this.selectedPlace = '';
-        this.isCitySelectDisabled = false;
-        this.isEditMode = false;
         this.placeForm.reset({ isActive: true });
+        this.isEditMode = false;
+        this.selectedPlace = '';
       }
     });
   }
@@ -239,7 +238,7 @@ export class PlaceComponent implements OnInit, OnDestroy {
 
     // add alias
     if (value && filteredAlias) {
-      filteredAlias?.push(value);
+      filteredAlias.push(value);
       this.aliasControl.setValue(filteredAlias);
     }
 
@@ -251,7 +250,6 @@ export class PlaceComponent implements OnInit, OnDestroy {
     if (row._id === this.selectedPlace) {
       this.placeForm.reset({ isActive: true });
       this.url.setQueryParams({ placeId: null });
-      this.isCitySelectDisabled = false;
       this.isEditMode = false;
       this.selectedPlace = '';
       return;
@@ -263,7 +261,6 @@ export class PlaceComponent implements OnInit, OnDestroy {
     if (!placeCity) return;
 
     this.isEditMode = true;
-    this.isCitySelectDisabled = true;
     this.selectedCity = placeCity;
     this.selectedPlace = row._id;
     this.placeForm.setValue({
@@ -322,7 +319,6 @@ export class PlaceComponent implements OnInit, OnDestroy {
 
         if (placeId && place) {
           this.isEditMode = true;
-          this.isCitySelectDisabled = true;
           this.selectedPlace = placeId;
           this.placeForm.setValue({
             name: place.name,
