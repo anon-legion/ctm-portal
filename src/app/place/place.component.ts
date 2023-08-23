@@ -207,20 +207,6 @@ export class PlaceComponent implements OnInit, OnDestroy {
     this.addPlace(formData, nameControl);
   }
 
-  deleteOnClick(placeId: string) {
-    this.dataService.deletePlaceById(placeId).then(res => {
-      const { status } = res;
-
-      if (status === StatusCode.Ok) {
-        this.placeList.removeById(placeId);
-        this._snackBar.open('Deleted', 'Close', {
-          duration: 3000,
-        });
-        this.setEditMode(false);
-      }
-    });
-  }
-
   selectCityOnChange(e: MatSelectChange) {
     if (e.value === this.allCity) {
       this.url.setQueryParams();
@@ -282,6 +268,20 @@ export class PlaceComponent implements OnInit, OnDestroy {
     }
 
     this.url.setQueryParams({ placeId: row._id });
+  }
+
+  deleteOnClick(placeId: string) {
+    this.dataService.deletePlaceById(placeId).then(res => {
+      const { status } = res;
+
+      if (status === StatusCode.Ok) {
+        this.placeList.removeById(placeId);
+        this._snackBar.open('Deleted', 'Close', {
+          duration: 3000,
+        });
+        this.setEditMode(false);
+      }
+    });
   }
 
   navigateTo(placeId: string) {

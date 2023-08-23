@@ -117,8 +117,7 @@
     mat-raised-button
     color="accent"
     class="uniform-button"
-    [disabled]="!selectedRouteStop"
-    (click)="navigateTo()">
-    Edit Place
+    (click)="editOrDlOnClick(selectedCity._id, selectedRouteStop)">
+    {{ isEditMode ? 'Edit Place' : 'Download' }}
   </button>
 </div>

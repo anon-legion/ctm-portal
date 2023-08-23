@@ -21,6 +21,7 @@ import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatSnackBarModule, MatSnackBar } from '@angular/material/snack-bar';
 import { MatTableModule } from '@angular/material/table';
 import { DataService } from '../data.service';
+import download from '../shared/download';
 import PathQuerySetter from '../shared/path-query-setter';
 import TableDataSource from '../shared/table-data-source';
 import { toTitleCase } from '../shared/utils';
@@ -189,32 +190,6 @@ export class RouteStopComponent implements OnInit, OnDestroy {
     return this.dataService.cityList;
   }
 
-  selectCityOnChange(e: MatSelectChange) {
-    const city = e.value as City;
-
-    this.url.setQueryParams({ cityId: city._id });
-
-    if (city === this.allCity) {
-      this.cityRouteList = [...this.allBusRoutes];
-      return;
-    }
-
-    this.cityRouteList = this.allBusRoutes.filter(
-      busRoute => (busRoute.cityId as City)._id === city._id
-    );
-
-    // if selected route is not in the city, set route to 'all'
-    if (this.selectedRoute.cityId !== city._id) {
-      this.url.setQueryParams({ cityId: city._id, routeId: this.allRoute._id });
-      this.selectedRoute = this.allRoute;
-    }
-  }
-
-  selectRouteOnChange(e: MatSelectChange) {
-    const busRoute = e.value as BusRoute;
-    this.url.setQueryParams({ routeId: busRoute._id });
-  }
-
   setEditMode(
     isEditMode: boolean,
     editRouteStop: RouteStop['_id'] = '',
@@ -350,6 +325,32 @@ export class RouteStopComponent implements OnInit, OnDestroy {
     }
   }
 
+  selectCityOnChange(e: MatSelectChange) {
+    const city = e.value as City;
+
+    this.url.setQueryParams({ cityId: city._id });
+
+    if (city === this.allCity) {
+      this.cityRouteList = [...this.allBusRoutes];
+      return;
+    }
+
+    this.cityRouteList = this.allBusRoutes.filter(
+      busRoute => (busRoute.cityId as City)._id === city._id
+    );
+
+    // if selected route is not in the city, set route to 'all'
+    if (this.selectedRoute.cityId !== city._id) {
+      this.url.setQueryParams({ cityId: city._id, routeId: this.allRoute._id });
+      this.selectedRoute = this.allRoute;
+    }
+  }
+
+  selectRouteOnChange(e: MatSelectChange) {
+    const busRoute = e.value as BusRoute;
+    this.url.setQueryParams({ routeId: busRoute._id });
+  }
+
   rowOnClick(row: RouteStopTd) {
     // const nameControl = this.routeStopForm.get('name');
     const rowId = row._id;
@@ -408,15 +409,24 @@ export class RouteStopComponent implements OnInit, OnDestroy {
     });
   }
 
-  navigateTo() {
-    const routeStop = this.routeStopList.findById(this.selectedRouteStop);
+  navigateTo(cityId: string, routeStopId: string) {
+    const routeStop = this.routeStopList.findById(routeStopId);
     this._router.navigate(['places'], {
       queryParams: {
-        cityId: this.selectedCity._id,
+        cityId,
         placeId: routeStop?.placeId._id,
       },
       queryParamsHandling: 'merge',
     });
+  }
+
+  editOrDlOnClick(cityId: string, routeStopId: string) {
+    if (this.isEditMode) {
+      this.navigateTo(cityId, routeStopId);
+      return;
+    }
+
+    download(this.routeStopList.value, 'route-stops');
   }
 
   // helper function for autocomplete to parse object to string
