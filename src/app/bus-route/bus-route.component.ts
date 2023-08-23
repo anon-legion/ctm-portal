@@ -203,6 +203,16 @@ export class BusRouteComponent implements OnInit, OnDestroy {
     return this.dataService.cityList;
   }
 
+  setEditMode(
+    isEditMode: boolean,
+    selectedBusRoute: BusRoute['_id'] = '',
+    formVals: Record<string, boolean | string | string[]> = { isActive: true }
+  ) {
+    this.isEditMode = isEditMode;
+    this.selectedBusRoute = selectedBusRoute;
+    this.busRouteForm.reset(formVals);
+  }
+
   editBusRoute(
     routeId: BusRoute['_id'],
     data: BusRoute,
@@ -223,9 +233,27 @@ export class BusRouteComponent implements OnInit, OnDestroy {
       if (status === StatusCode.Ok) {
         this._snackBar.open('Update success', 'Close', { duration: 3000 });
         this.routeList.updateById(data._id, data);
+        this.setEditMode(false);
+      }
+    });
+  }
+
+  addBusRoute(data: BusRoute, nameControl: FormControl) {
+    this.dataService.addNewBusRoute(data).then(res => {
+      const { status, data } = res;
+
+      if (status === StatusCode.Conflict) {
+        nameControl.setErrors({ conflict: true });
+        this._snackBar.open('Name already exists', 'Close', {
+          duration: 3000,
+        });
+        return;
+      }
+
+      if (status === StatusCode.Created) {
+        this._snackBar.open('New route added', 'Close', { duration: 3000 });
+        this.routeList.push(data);
         this.busRouteForm.reset({ isActive: true });
-        this.isEditMode = false;
-        this.selectedBusRoute = '';
       }
     });
   }
@@ -246,37 +274,21 @@ export class BusRouteComponent implements OnInit, OnDestroy {
       isActive: this.busRouteForm.value.isActive,
     } as BusRoute;
 
+    // update bus route
     if (this.isEditMode) {
       this.editBusRoute(this.selectedBusRoute, formData, nameControl);
       return;
     }
 
-    this.dataService.addNewBusRoute(formData).then(res => {
-      const { status, data } = res;
-
-      if (status === StatusCode.Conflict) {
-        nameControl.setErrors({ conflict: true });
-        this._snackBar.open('Name already exists', 'Close', {
-          duration: 3000,
-        });
-        return;
-      }
-
-      if (status === StatusCode.Created) {
-        this._snackBar.open('New route added', 'Close', { duration: 3000 });
-        this.routeList.push(data);
-        this.busRouteForm.reset({ isActive: true });
-      }
-    });
+    // add new bus route
+    this.addBusRoute(formData, nameControl);
   }
 
   // on row click when route is selected for editing
   rowOnClick(row: BusRoute) {
     if (row._id === this.selectedBusRoute) {
-      this.busRouteForm.reset({ isActive: true });
       this.url.setQueryParams({ placeId: null });
-      this.isEditMode = false;
-      this.selectedBusRoute = '';
+      this.setEditMode(false);
       return;
     }
 
@@ -287,13 +299,11 @@ export class BusRouteComponent implements OnInit, OnDestroy {
 
     if (!routeCity) return;
 
-    this.isEditMode = true;
-    this.selectedCity = routeCity;
-    this.selectedBusRoute = row._id;
-    this.busRouteForm.setValue({
+    this.setEditMode(true, row._id, {
       name: row.name,
       isActive: row.isActive,
     });
+    this.selectedCity = routeCity;
 
     if (cityId !== routeCity?._id) {
       this.url.setQueryParams({ cityId: routeCity?._id });
@@ -309,9 +319,7 @@ export class BusRouteComponent implements OnInit, OnDestroy {
         this._snackBar.open('Deleted', 'Close', {
           duration: 3000,
         });
-        this.selectedBusRoute = '';
-        this.isEditMode = false;
-        this.busRouteForm.reset({ isActive: true });
+        this.setEditMode(false);
       }
     });
   }

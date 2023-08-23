@@ -128,11 +128,11 @@ export class PlaceComponent implements OnInit, OnDestroy {
   setEditMode(
     isEditMode: boolean,
     selectedPlace: Place['_id'] = '',
-    placeForm: Record<string, boolean | string | string[]> = { isActive: true }
+    formVals: Record<string, boolean | string | string[]> = { isActive: true }
   ) {
     this.isEditMode = isEditMode;
     this.selectedPlace = selectedPlace;
-    this.placeForm.reset(placeForm);
+    this.placeForm.reset(formVals);
   }
 
   editPlace(placeId: Place['_id'], data: Place, nameControl: FormControl) {
