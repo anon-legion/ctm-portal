@@ -125,6 +125,16 @@ export class PlaceComponent implements OnInit, OnDestroy {
     return this.dataService.cityList;
   }
 
+  setEditMode(
+    isEditMode: boolean,
+    selectedPlace: Place['_id'] = '',
+    placeForm: Record<string, boolean | string | string[]> = { isActive: true }
+  ) {
+    this.isEditMode = isEditMode;
+    this.selectedPlace = selectedPlace;
+    this.placeForm.reset(placeForm);
+  }
+
   editPlace(placeId: Place['_id'], data: Place, nameControl: FormControl) {
     this.dataService.updatePlaceById(placeId, data).then(res => {
       const { status, data } = res;
@@ -141,10 +151,33 @@ export class PlaceComponent implements OnInit, OnDestroy {
       if (status === StatusCode.Ok) {
         this._snackBar.open('Update success', 'Close', { duration: 3000 });
         this.placeList.updateById(data._id, data);
-        this.placeForm.reset({ isActive: true });
-        this.isEditMode = false;
-        this.selectedPlace = '';
+        this.setEditMode(false);
       }
+    });
+  }
+
+  addPlace(data: Place, nameControl: FormControl) {
+    this.dataService.addNewPlace(data).then(res => {
+      const { status, data } = res;
+
+      if (status === StatusCode.Conflict) {
+        nameControl.setErrors({ conflict: true });
+        this._snackBar.open('Name already exists', 'Close', {
+          duration: 3000,
+        });
+        return;
+      }
+
+      if (status === StatusCode.Created) {
+        this._snackBar.open('Success', 'Close', {
+          duration: 3000,
+        });
+        this.placeList.push(data);
+        this.placeForm.reset({ isActive: true });
+        return;
+      }
+
+      this._snackBar.open('Something went wrong', 'Close', { duration: 3000 });
     });
   }
 
@@ -170,28 +203,7 @@ export class PlaceComponent implements OnInit, OnDestroy {
     }
 
     // add new place
-    this.dataService.addNewPlace(formData).then(res => {
-      const { status, data } = res;
-
-      if (status === StatusCode.Conflict) {
-        nameControl.setErrors({ conflict: true });
-        this._snackBar.open('Name already exists', 'Close', {
-          duration: 3000,
-        });
-        return;
-      }
-
-      if (status === StatusCode.Created) {
-        this._snackBar.open('Success', 'Close', {
-          duration: 3000,
-        });
-        this.placeList.push(data);
-        this.placeForm.reset({ isActive: true });
-        return;
-      }
-
-      this._snackBar.open('Something went wrong', 'Close', { duration: 3000 });
-    });
+    this.addPlace(formData, nameControl);
   }
 
   deleteOnClick(placeId: string) {
@@ -203,9 +215,7 @@ export class PlaceComponent implements OnInit, OnDestroy {
         this._snackBar.open('Deleted', 'Close', {
           duration: 3000,
         });
-        this.placeForm.reset({ isActive: true });
-        this.isEditMode = false;
-        this.selectedPlace = '';
+        this.setEditMode(false);
       }
     });
   }
@@ -249,9 +259,7 @@ export class PlaceComponent implements OnInit, OnDestroy {
   rowOnClick(row: PlaceTd) {
     if (row._id === this.selectedPlace) {
       this.placeForm.reset({ isActive: true });
-      this.url.setQueryParams({ placeId: null });
-      this.isEditMode = false;
-      this.selectedPlace = '';
+      this.setEditMode(false);
       return;
     }
 
@@ -260,19 +268,18 @@ export class PlaceComponent implements OnInit, OnDestroy {
 
     if (!placeCity) return;
 
-    this.isEditMode = true;
-    this.selectedCity = placeCity;
-    this.selectedPlace = row._id;
-    this.placeForm.setValue({
+    this.setEditMode(true, row._id, {
       name: row.name,
       aliases: row.aliases,
       isActive: row.isActive,
     });
+    this.selectedCity = placeCity;
 
     if (cityId !== placeCity?._id) {
       this.url.setQueryParams({ cityId: placeCity?._id, placeId: row._id });
       return;
     }
+
     this.url.setQueryParams({ placeId: row._id });
   }
 
@@ -318,9 +325,7 @@ export class PlaceComponent implements OnInit, OnDestroy {
         const place = data.find(place => place._id === placeId);
 
         if (placeId && place) {
-          this.isEditMode = true;
-          this.selectedPlace = placeId;
-          this.placeForm.setValue({
+          this.setEditMode(true, placeId, {
             name: place.name,
             aliases: place.aliases ?? [],
             isActive: place.isActive ?? true,

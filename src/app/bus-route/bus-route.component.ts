@@ -61,7 +61,7 @@ function getAllBusRoutes(
         <mat-select
           [(value)]="selectedCity"
           (selectionChange)="selectCityOnChange($event)"
-          [disabled]="isCitySelectDisabled">
+          [disabled]="isEditMode">
           <mat-option [value]="allCity">All Cities</mat-option>
           <mat-option *ngFor="let city of cityList" [value]="city">
             {{ city.name }}
@@ -164,7 +164,6 @@ export class BusRouteComponent implements OnInit, OnDestroy {
     name: this.nameControl,
     isActive: this.isActiveControl,
   });
-  isCitySelectDisabled = false;
   isEditMode = false;
 
   constructor(
@@ -225,7 +224,6 @@ export class BusRouteComponent implements OnInit, OnDestroy {
         this._snackBar.open('Update success', 'Close', { duration: 3000 });
         this.routeList.updateById(data._id, data);
         this.busRouteForm.reset({ isActive: true });
-        this.isCitySelectDisabled = false;
         this.isEditMode = false;
         this.selectedBusRoute = '';
       }
@@ -277,7 +275,6 @@ export class BusRouteComponent implements OnInit, OnDestroy {
     if (row._id === this.selectedBusRoute) {
       this.busRouteForm.reset({ isActive: true });
       this.url.setQueryParams({ placeId: null });
-      this.isCitySelectDisabled = false;
       this.isEditMode = false;
       this.selectedBusRoute = '';
       return;
@@ -291,7 +288,6 @@ export class BusRouteComponent implements OnInit, OnDestroy {
     if (!routeCity) return;
 
     this.isEditMode = true;
-    this.isCitySelectDisabled = true;
     this.selectedCity = routeCity;
     this.selectedBusRoute = row._id;
     this.busRouteForm.setValue({
@@ -314,7 +310,6 @@ export class BusRouteComponent implements OnInit, OnDestroy {
           duration: 3000,
         });
         this.selectedBusRoute = '';
-        this.isCitySelectDisabled = false;
         this.isEditMode = false;
         this.busRouteForm.reset({ isActive: true });
       }
