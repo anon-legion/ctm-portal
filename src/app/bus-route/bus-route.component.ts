@@ -81,9 +81,34 @@ function getAllBusRoutes(
           formControlName="name"
           class="is-capitalized" />
       </mat-form-field>
-      <mat-slide-toggle class="mb-2" color="accent" formControlName="isActive">
-        {{ busRouteForm.value.isActive ? 'Active' : 'Inactive' }}
-      </mat-slide-toggle>
+      <div
+        class="is-flex is-justify-content-space-between is-align-items-center width-breakpoint-768">
+        <mat-slide-toggle
+          class="mb-2"
+          color="accent"
+          formControlName="isActive">
+          Is Active
+        </mat-slide-toggle>
+        <mat-slide-toggle
+          class="mb-2"
+          color="accent"
+          formControlName="isSymmetric">
+          Is Symmetric
+        </mat-slide-toggle>
+        <mat-slide-toggle class="mb-2" color="accent" formControlName="hasPath">
+          Has Path
+        </mat-slide-toggle>
+        <mat-form-field appearance="outline" color="accent">
+          <mat-label>Weight</mat-label>
+          <input
+            matInput
+            type="text"
+            (keydown)="weightOnKeyDown($event)"
+            (ngModelChange)="weightOnChange($event)"
+            formControlName="weight"
+            pattern="^[0-9]+(.[0-9]{1,2})?$" />
+        </mat-form-field>
+      </div>
       <button
         type="button"
         mat-raised-button
@@ -159,10 +184,16 @@ export class BusRouteComponent implements OnInit, OnDestroy {
     Validators.required,
     Validators.minLength(3),
   ]);
-  isActiveControl = new FormControl(true, [Validators.required]);
+  isActiveControl = new FormControl<boolean>(true, [Validators.required]);
+  isSymmetricControl = new FormControl<boolean>(false, [Validators.required]);
+  hasPathControl = new FormControl<boolean>(false, [Validators.required]);
+  weightControl = new FormControl<number | null>(null, [Validators.min(0)]);
   busRouteForm = new FormGroup({
     name: this.nameControl,
     isActive: this.isActiveControl,
+    isSymmetric: this.isSymmetricControl,
+    hasPath: this.hasPathControl,
+    weight: this.weightControl,
   });
   isEditMode = false;
 
@@ -206,7 +237,9 @@ export class BusRouteComponent implements OnInit, OnDestroy {
   setEditMode(
     isEditMode: boolean,
     selectedBusRoute: BusRoute['_id'] = '',
-    formVals: Record<string, boolean | string> = { isActive: true }
+    formVals: Record<string, boolean | string | number> = {
+      isActive: true,
+    }
   ) {
     this.isEditMode = isEditMode;
     this.selectedBusRoute = selectedBusRoute;
@@ -269,10 +302,12 @@ export class BusRouteComponent implements OnInit, OnDestroy {
       return;
     }
 
+    const weight = this.weightControl.value ? +this.weightControl.value : 0;
     const formData = {
+      ...this.busRouteForm.value,
       cityId: this.selectedCity._id,
       name: toTitleCase(nameControl.value),
-      isActive: this.busRouteForm.value.isActive,
+      weight,
     } as BusRoute;
 
     // update bus route
@@ -288,7 +323,6 @@ export class BusRouteComponent implements OnInit, OnDestroy {
   // on row click when route is selected for editing
   rowOnClick(row: BusRoute) {
     if (row._id === this.selectedBusRoute) {
-      this.url.setQueryParams({ placeId: null });
       this.setEditMode(false);
       return;
     }
@@ -303,6 +337,9 @@ export class BusRouteComponent implements OnInit, OnDestroy {
     this.setEditMode(true, row._id, {
       name: row.name,
       isActive: row.isActive,
+      isSymmetric: row.isSymmetric ?? false,
+      hasPath: row.hasPath ?? false,
+      weight: row.weight ?? '',
     });
     this.selectedCity = routeCity;
 
@@ -351,6 +388,28 @@ export class BusRouteComponent implements OnInit, OnDestroy {
     }
 
     download(this.routeList.value, 'routes');
+  }
+
+  weightOnKeyDown(e: KeyboardEvent) {
+    const { key } = e;
+    const pattern = /[0-9]/;
+
+    if (
+      !pattern.test(key) &&
+      key !== 'Backspace' &&
+      !(e.ctrlKey && key === 'v')
+    ) {
+      // invalid character, prevent input
+      e.preventDefault();
+    }
+  }
+
+  weightOnChange(e: Event) {
+    const input = +e;
+
+    if (input === this.weightControl.value || Number.isNaN(input)) return;
+
+    this.weightControl.setValue(Math.max(0, input));
   }
 
   ngOnInit() {

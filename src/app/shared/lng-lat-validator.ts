@@ -22,7 +22,9 @@ function lngLatValidator(control: AbstractControl): ValidationErrors | null {
     }
   );
 
-  return !isValid ? { invalidLngLat: { value: control.value } } : null;
+  return isValid || normalizedValue[0] === ''
+    ? null
+    : { invalidLngLat: { value: control.value } };
 }
 
 export default lngLatValidator;

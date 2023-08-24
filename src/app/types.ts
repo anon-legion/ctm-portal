@@ -13,7 +13,7 @@ export interface City extends BaseModel {
 export interface BusRoute extends BaseModel {
   cityId: City['_id'] | City;
   weight?: number;
-  symmetric?: boolean;
+  isSymmetric?: boolean;
   hasPath?: boolean;
 }
 

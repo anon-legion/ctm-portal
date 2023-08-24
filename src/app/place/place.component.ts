@@ -95,7 +95,7 @@ export class PlaceComponent implements OnInit, OnDestroy {
     private _snackBar: MatSnackBar,
     private _router: Router,
     private _route: ActivatedRoute,
-    public dataService: DataService
+    private dataService: DataService
   ) {
     this.url = new PathQuerySetter(this._router, this._route, {
       cityId: 'all',
@@ -133,7 +133,7 @@ export class PlaceComponent implements OnInit, OnDestroy {
   setEditMode(
     isEditMode: boolean,
     selectedPlace: Place['_id'] = '',
-    formVals: Record<string, boolean | string | string[] | null> = {
+    formVals: Record<string, boolean | string | string[]> = {
       aliases: [],
       isActive: true,
     }
@@ -201,10 +201,12 @@ export class PlaceComponent implements OnInit, OnDestroy {
     const coords = this.coordsControl.value
       ? toLngLat(this.coordsControl.value)
       : null;
+    const type = this.typeControl.value ? this.typeControl.value : null;
     const formData = {
       ...this.placeForm.value,
       cityId: this.selectedCity._id,
       name: toTitleCase(nameControl.value),
+      type,
       coords,
     } as Place;
 
@@ -338,7 +340,7 @@ export class PlaceComponent implements OnInit, OnDestroy {
             aliases: place.aliases ?? [],
             isActive: place.isActive ?? true,
             type: place.type ?? '',
-            coords: place.coords?.join(', ') ?? null,
+            coords: place.coords?.join(', ') ?? '',
           });
         }
       });

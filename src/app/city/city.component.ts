@@ -57,7 +57,8 @@ import { City } from '../types';
           class="mb-2"
           color="accent"
           formControlName="isActive">
-          {{ cityForm.value.isActive ? 'Active' : 'Inactive' }}
+          Is Active
+          <!-- {{ cityForm.value.isActive ? 'Active' : 'Inactive' }} -->
         </mat-slide-toggle>
         <mat-form-field appearance="outline" color="accent">
           <mat-label>Code</mat-label>
@@ -176,7 +177,7 @@ export class CityComponent {
   setEditMode(
     isEditMode: boolean,
     selectedCity: City['_id'] = '',
-    formVals: Record<string, boolean | string | number | null> = {
+    formVals: Record<string, boolean | string | number> = {
       isActive: true,
     }
   ) {
@@ -276,8 +277,8 @@ export class CityComponent {
       name: row.name,
       isActive: row.isActive,
       code: row.code ?? '',
-      center: row.center?.join(', ') ?? null,
-      zoom: row.zoom ?? null,
+      center: row.center?.join(', ') ?? '',
+      zoom: row.zoom ?? '',
     });
   }
 
@@ -297,14 +298,14 @@ export class CityComponent {
     download(this.cityList, 'cities');
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   zoomOnKeyDown(e: KeyboardEvent) {
+    const { key } = e;
     const pattern = /[0-9]/;
 
     if (
-      !pattern.test(e.key) &&
-      e.key !== 'Backspace' &&
-      !(e.ctrlKey && e.key === 'v')
+      !pattern.test(key) &&
+      key !== 'Backspace' &&
+      !(e.ctrlKey && key === 'v')
     ) {
       // invalid character, prevent input
       e.preventDefault();
