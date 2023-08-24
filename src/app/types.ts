@@ -1,15 +1,27 @@
-export interface City {
+interface BaseModel {
   _id: string;
   name: string;
   isActive: boolean;
 }
 
-export interface BusRoute extends City {
-  cityId: string | City;
+export interface City extends BaseModel {
+  code?: string;
+  center?: [number, number] | null;
+  zoom?: number | null;
 }
 
-export interface Place extends BusRoute {
+export interface BusRoute extends BaseModel {
+  cityId: City['_id'] | City;
+  weight?: number;
+  symmetric?: boolean;
+  hasPath?: boolean;
+}
+
+export interface Place extends BaseModel {
+  cityId: City['_id'] | City;
   aliases: string[] | [];
+  type?: string | null;
+  coords?: [number, number] | null;
 }
 
 export interface PlaceTd extends Place {

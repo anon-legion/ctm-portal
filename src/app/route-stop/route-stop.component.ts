@@ -520,7 +520,6 @@ export class RouteStopComponent implements OnInit, OnDestroy {
     );
     distanceInput?.addEventListener('input', (event: Event) => {
       const input = event.target as HTMLInputElement;
-      // input.value = input.value.replace(/^[0-9]+(\.[0-9]*)?$/g, '');
       input.value =
         input.value.replace(/[^\d.]/g, '').match(/^(\d+)?(\.\d{0,2})?/)?.[0] ||
         '';

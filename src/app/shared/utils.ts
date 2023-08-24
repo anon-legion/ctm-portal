@@ -16,3 +16,11 @@ export function toTitleCase(text: string) {
     .toLowerCase()
     .replace(/\d+[A-Za-z]|\b[a-z]/g, a => a.toUpperCase());
 }
+
+export function toLngLat(val: string) {
+  const normalizedValue = val
+    .replace(/^([[(])(.*)([\])])$/, '$2')
+    .replaceAll(/\s+/g, '')
+    .split(',');
+  return normalizedValue.map(val => +val);
+}

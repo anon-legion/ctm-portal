@@ -11,15 +11,15 @@ import { Router } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatSnackBarModule, MatSnackBar } from '@angular/material/snack-bar';
 import { MatTableModule } from '@angular/material/table';
 import { DataService } from '../data.service';
 import download from '../shared/download';
+import lngLatValidator from '../shared/lng-lat-validator';
 import TableDataSource from '../shared/table-data-source';
-import { toTitleCase } from '../shared/utils';
+import { toLngLat, toTitleCase } from '../shared/utils';
 import { City } from '../types';
 
 @Component({
@@ -31,7 +31,6 @@ import { City } from '../types';
     MatButtonModule,
     MatDividerModule,
     MatFormFieldModule,
-    MatIconModule,
     MatInputModule,
     MatSlideToggleModule,
     MatSnackBarModule,
@@ -51,18 +50,32 @@ import { City } from '../types';
         <mat-error *ngIf="cityForm.get('name')?.invalid">
           Name already exists
         </mat-error>
-        <button
-          *ngIf="cityForm.value.name"
-          matSuffix
-          mat-icon-button
-          aria-label="Clear"
-          (click)="cityForm.get('name')?.reset('')">
-          <mat-icon>close</mat-icon>
-        </button>
       </mat-form-field>
-      <mat-slide-toggle class="mb-2" color="accent" formControlName="isActive">
-        {{ cityForm.value.isActive ? 'Active' : 'Inactive' }}
-      </mat-slide-toggle>
+      <div
+        class="is-flex is-justify-content-space-between is-align-items-center width-breakpoint-768">
+        <mat-slide-toggle
+          class="mb-2"
+          color="accent"
+          formControlName="isActive">
+          {{ cityForm.value.isActive ? 'Active' : 'Inactive' }}
+        </mat-slide-toggle>
+        <mat-form-field appearance="outline" color="accent">
+          <mat-label>Code</mat-label>
+          <input matInput type="text" formControlName="code" />
+        </mat-form-field>
+        <mat-form-field appearance="outline" color="accent">
+          <mat-label>Center</mat-label>
+          <input matInput type="text" formControlName="center" />
+        </mat-form-field>
+        <mat-form-field appearance="outline" color="accent">
+          <mat-label>Zoom</mat-label>
+          <input
+            matInput
+            type="text"
+            formControlName="zoom"
+            pattern="^[0-9]+(.[0-9]{1,2})?$" />
+        </mat-form-field>
+      </div>
       <button
         type="button"
         mat-raised-button
@@ -124,9 +137,21 @@ export class CityComponent {
     Validators.minLength(4),
   ]);
   isActiveControl = new FormControl(true, [Validators.required]);
+  codeControl = new FormControl<string>('', [
+    Validators.required,
+    Validators.minLength(3),
+  ]);
+  centerControl = new FormControl<string>('', [lngLatValidator]);
+  zoomControl = new FormControl<number | null>(null, [
+    Validators.min(0),
+    Validators.max(22),
+  ]);
   cityForm = new FormGroup({
     name: this.nameControl,
     isActive: this.isActiveControl,
+    code: this.codeControl,
+    center: this.centerControl,
+    zoom: this.zoomControl,
   });
   isEditMode = false;
 
@@ -149,7 +174,9 @@ export class CityComponent {
   setEditMode(
     isEditMode: boolean,
     selectedCity: City['_id'] = '',
-    formVals: Record<string, boolean | string> = { isActive: true }
+    formVals: Record<string, boolean | string | number | null> = {
+      isActive: true,
+    }
   ) {
     this.isEditMode = isEditMode;
     this.selectedCity = selectedCity;
@@ -202,9 +229,15 @@ export class CityComponent {
 
     if (!nameControl || !nameControl.value) return;
 
+    const center = this.centerControl.value
+      ? toLngLat(this.centerControl.value)
+      : null;
+    const zoom = this.zoomControl.value ? +this.zoomControl.value : null;
     const formData = {
+      ...this.cityForm.value,
+      center,
+      zoom,
       name: toTitleCase(nameControl.value),
-      isActive: this.cityForm.value.isActive,
     } as City;
 
     // update city
@@ -240,6 +273,9 @@ export class CityComponent {
     this.setEditMode(true, row._id, {
       name: row.name,
       isActive: row.isActive,
+      code: row.code ?? '',
+      center: row.center?.join(', ') ?? null,
+      zoom: row.zoom ?? null,
     });
   }
 
