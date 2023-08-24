@@ -72,6 +72,8 @@ import { City } from '../types';
           <input
             matInput
             type="text"
+            (keydown)="zoomOnKeyDown($event)"
+            (ngModelChange)="zoomOnChange($event)"
             formControlName="zoom"
             pattern="^[0-9]+(.[0-9]{1,2})?$" />
         </mat-form-field>
@@ -293,5 +295,27 @@ export class CityComponent {
     }
 
     download(this.cityList, 'cities');
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  zoomOnKeyDown(e: KeyboardEvent) {
+    const pattern = /[0-9]/;
+
+    if (
+      !pattern.test(e.key) &&
+      e.key !== 'Backspace' &&
+      !(e.ctrlKey && e.key === 'v')
+    ) {
+      // invalid character, prevent input
+      e.preventDefault();
+    }
+  }
+
+  zoomOnChange(e: Event) {
+    const input = +e;
+
+    if (input === this.zoomControl.value || Number.isNaN(input)) return;
+
+    this.zoomControl.setValue(Math.max(0, Math.min(22, input)));
   }
 }
