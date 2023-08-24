@@ -21,9 +21,10 @@ import { MatSnackBarModule, MatSnackBar } from '@angular/material/snack-bar';
 import { MatTableModule } from '@angular/material/table';
 import { DataService } from '../data.service';
 import download from '../shared/download';
+import lngLatValidator from '../shared/lng-lat-validator';
 import PathQuerySetter from '../shared/path-query-setter';
 import TableDataSource from '../shared/table-data-source';
-import { toTitleCase } from '../shared/utils';
+import { toLngLat, toTitleCase } from '../shared/utils';
 import { Place, City, PlaceTd } from '../types';
 
 function getAllPlaces(
@@ -79,10 +80,14 @@ export class PlaceComponent implements OnInit, OnDestroy {
   ]);
   aliasControl = new FormControl([] as string[]);
   isActiveControl = new FormControl(true, [Validators.required]);
+  typeControl = new FormControl('');
+  coordsControl = new FormControl('', [lngLatValidator]);
   placeForm = new FormGroup({
     name: this.nameControl,
     aliases: this.aliasControl,
     isActive: this.isActiveControl,
+    type: this.typeControl,
+    coords: this.coordsControl,
   });
   isEditMode = false;
 
@@ -128,7 +133,10 @@ export class PlaceComponent implements OnInit, OnDestroy {
   setEditMode(
     isEditMode: boolean,
     selectedPlace: Place['_id'] = '',
-    formVals: Record<string, boolean | string | string[]> = { isActive: true }
+    formVals: Record<string, boolean | string | string[] | null> = {
+      aliases: [],
+      isActive: true,
+    }
   ) {
     this.isEditMode = isEditMode;
     this.selectedPlace = selectedPlace;
@@ -190,16 +198,20 @@ export class PlaceComponent implements OnInit, OnDestroy {
       return;
     }
 
+    const coords = this.coordsControl.value
+      ? toLngLat(this.coordsControl.value)
+      : null;
     const formData = {
+      ...this.placeForm.value,
       cityId: this.selectedCity._id,
       name: toTitleCase(nameControl.value),
-      aliases: this.placeForm.value.aliases,
-      isActive: this.placeForm.value.isActive,
+      coords,
     } as Place;
 
     // update place
     if (this.isEditMode) {
       this.editPlace(this.selectedPlace, formData, nameControl);
+      this.url.setQueryParams({ placeId: null });
       return;
     }
 
@@ -245,7 +257,7 @@ export class PlaceComponent implements OnInit, OnDestroy {
 
   rowOnClick(row: PlaceTd) {
     if (row._id === this.selectedPlace) {
-      this.placeForm.reset({ isActive: true });
+      this.url.setQueryParams({ placeId: null });
       this.setEditMode(false);
       return;
     }
@@ -255,11 +267,6 @@ export class PlaceComponent implements OnInit, OnDestroy {
 
     if (!placeCity) return;
 
-    this.setEditMode(true, row._id, {
-      name: row.name,
-      aliases: row.aliases,
-      isActive: row.isActive,
-    });
     this.selectedCity = placeCity;
 
     if (cityId !== placeCity?._id) {
@@ -330,6 +337,8 @@ export class PlaceComponent implements OnInit, OnDestroy {
             name: place.name,
             aliases: place.aliases ?? [],
             isActive: place.isActive ?? true,
+            type: place.type ?? '',
+            coords: place.coords?.join(', ') ?? null,
           });
         }
       });
